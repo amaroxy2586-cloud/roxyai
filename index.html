@@ -1,0 +1,3183 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AI 指令小幫手｜自媒體老師專用</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* 大地淺色奶茶底 × 陶土橘重點 */
+  --orange:#D97757; --orange-soft:#EFB89C; --orange-light:#FBEADF;
+  --caramel:#B08055; --caramel-soft:#DFC3A0; --caramel-light:#F7EDDF;
+  --olive:#9DA383; --olive-light:#EDEFE2; --sand:#D6BE9E;
+  --milk:#F0E5D7; --bg:#F6EEE4; --white:#FFFCF8;
+  --dark:#3E342C; --medium:#6E6053; --gray:#8A7A66;
+  --line:#E3D5C1;
+  --r:16px; --shadow:0 1px 3px rgba(62,52,44,.07), 0 6px 20px rgba(62,52,44,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:"Noto Sans TC",-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  background:var(--bg); color:var(--dark); line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+a{color:inherit}
+
+/* ---------- Layout ---------- */
+.app{display:flex;min-height:100vh}
+.side{
+  width:232px;flex:0 0 232px;background:var(--milk);
+  border-right:1px solid var(--line);padding:26px 16px 30px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px 22px}
+.brand-mark{
+  width:38px;height:38px;border-radius:12px;flex:0 0 38px;
+  background:linear-gradient(135deg,var(--orange),var(--orange-soft));
+  display:grid;place-items:center;color:#fff;font-weight:700;font-size:17px;
+}
+.brand-txt strong{display:block;font-size:15px;font-weight:700;letter-spacing:.02em}
+.brand-txt span{display:block;font-size:11.5px;color:var(--gray)}
+.nav{display:flex;flex-direction:column;gap:3px}
+.nav-lbl{font-size:11px;color:var(--gray);padding:14px 10px 6px;letter-spacing:.08em}
+.nav button{
+  display:flex;align-items:center;gap:10px;width:100%;
+  padding:10px 12px;border-radius:10px;font-size:14.5px;color:var(--medium);
+  text-align:left;transition:.15s;
+}
+.nav button:hover{background:var(--white)}
+.nav button.on{background:var(--orange-light);color:var(--dark);font-weight:700}
+.nav button i{font-style:normal;font-size:16px;width:20px;text-align:center}
+.side-foot{margin-top:22px;padding:0 8px;display:flex;flex-direction:column;gap:8px}
+
+.main{flex:1;min-width:0;padding:34px 40px 90px;max-width:1180px}
+.page{display:none;animation:fade .25s ease}
+.page.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.h1{font-size:26px;font-weight:700;letter-spacing:.01em}
+.sub{color:var(--gray);font-size:14px;margin-top:4px}
+.head{margin-bottom:26px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.h2{font-size:17px;font-weight:700;margin-bottom:4px}
+.sec{margin-top:30px}
+
+/* ---------- Cards ---------- */
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.pad{padding:22px 24px}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.gauto{grid-template-columns:repeat(auto-fit,minmax(176px,1fr))}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+
+.stat{padding:18px 20px;border-radius:var(--r);border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.stat::after{content:"";position:absolute;top:0;bottom:0;left:0;width:4px;background:var(--orange-soft)}
+.stat.b::after{background:var(--caramel-soft)} .stat.s::after{background:var(--olive)} .stat.c::after{background:var(--sand)}
+.stat .k{font-size:12.5px;color:var(--gray);display:flex;align-items:center;gap:6px}
+.stat .v{font-size:30px;font-weight:700;line-height:1.25;margin-top:6px;letter-spacing:-.01em}
+.stat .v small{font-size:14px;font-weight:500;color:var(--gray);margin-left:2px}
+.stat .n{font-size:12px;color:var(--gray);margin-top:2px}
+
+.bar{height:8px;border-radius:99px;background:var(--orange-light);overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:var(--orange);border-radius:99px;transition:width .5s}
+
+/* ---------- Form ---------- */
+.field{margin-bottom:18px}
+.field label{display:block;font-size:13.5px;font-weight:700;margin-bottom:6px}
+.field .hint{font-size:12.5px;color:var(--gray);font-weight:400;margin-bottom:7px;line-height:1.6}
+.inp,textarea.inp,select.inp{
+  width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:11px;
+  background:var(--white);font-size:14.5px;transition:.15s;outline:none;
+}
+.inp:focus{border-color:var(--orange-soft);box-shadow:0 0 0 3px var(--orange-light)}
+textarea.inp{resize:vertical;min-height:88px;line-height:1.75}
+select.inp{appearance:none;padding-right:34px}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  padding:7px 14px;border-radius:99px;border:1px solid var(--line);
+  background:var(--white);font-size:13.5px;color:var(--medium);transition:.15s;
+}
+.chip:hover{border-color:var(--orange-soft)}
+.chip.on{background:var(--orange-light);border-color:var(--orange-soft);color:var(--dark);font-weight:700}
+
+.btn{
+  padding:10px 20px;border-radius:99px;font-size:14px;font-weight:700;
+  background:var(--orange);color:#fff;transition:.15s;white-space:nowrap;
+}
+.btn:hover{background:#C4643F}
+.btn:disabled{background:var(--orange-soft);cursor:not-allowed}
+.btn.ghost{background:var(--white);color:var(--medium);border:1px solid var(--line);font-weight:500}
+.btn.ghost:hover{border-color:var(--orange-soft);color:var(--dark)}
+.btn.sm{padding:7px 14px;font-size:13px}
+.btn.blue{background:var(--caramel)} .btn.blue:hover{background:#98693F}
+.btn.wide{width:100%;text-align:center}
+.btn.danger{background:var(--white);color:#B3593B;border:1px solid var(--line)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* ---------- Generator ---------- */
+.tabs{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;margin-bottom:22px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  flex:0 0 auto;padding:14px 18px;border-radius:14px;border:1px solid var(--line);
+  background:var(--white);text-align:left;min-width:158px;transition:.15s;
+}
+.tab:hover{border-color:var(--orange-soft)}
+.tab.on{border-color:var(--orange);background:var(--orange-light)}
+.tab b{display:block;font-size:14.5px}
+.tab span{display:block;font-size:11.5px;color:var(--gray);margin-top:1px}
+.tab em{font-style:normal;font-size:18px;display:block;margin-bottom:4px}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+.out{
+  background:#3E342C;color:#F7F0E6;border-radius:var(--r);padding:20px;
+  font-size:13px;line-height:1.85;white-space:pre-wrap;word-break:break-word;
+  max-height:560px;overflow-y:auto;
+}
+.out::-webkit-scrollbar{width:8px}
+.out::-webkit-scrollbar-thumb{background:#6E6053;border-radius:9px}
+.sticky{position:sticky;top:24px}
+
+.warn{
+  background:var(--caramel-light);border:1px solid var(--caramel-soft);border-radius:12px;
+  padding:12px 15px;font-size:13.5px;color:var(--medium);display:flex;gap:9px;align-items:flex-start;
+}
+.warn b{color:var(--dark)}
+
+/* ---------- List ---------- */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center}
+.search{position:relative;flex:1;min-width:200px}
+.search .inp{padding-left:38px}
+.search span{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--gray);font-size:14px}
+.item{
+  background:var(--white);border:1px solid var(--line);border-radius:14px;padding:16px 18px;
+  margin-bottom:11px;transition:.15s;
+}
+.item:hover{border-color:var(--orange-soft);box-shadow:var(--shadow)}
+.item-top{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.item h4{font-size:15px;font-weight:700;line-height:1.5}
+.item .snip{font-size:13px;color:var(--gray);margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.7}
+.item .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:11px}
+.badge{font-size:11.5px;padding:3px 10px;border-radius:99px;background:var(--orange-light);color:var(--medium);font-weight:700}
+.badge.b{background:var(--caramel-light)} .badge.s{background:var(--olive-light)} .badge.c{background:var(--caramel-light)}
+.tag{font-size:11.5px;padding:3px 9px;border-radius:8px;background:var(--bg);border:1px solid var(--line);color:var(--gray)}
+.date{font-size:11.5px;color:var(--gray);margin-left:auto}
+.star{font-size:17px;line-height:1;color:#DFD3C2;transition:.15s}
+.star.on{color:#D9A441}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+
+.empty{text-align:center;padding:56px 20px;color:var(--gray)}
+.empty em{font-style:normal;font-size:38px;display:block;margin-bottom:12px;opacity:.55}
+.empty p{font-size:14px;margin-bottom:16px}
+
+/* ---------- QA rows ---------- */
+.qa{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;background:var(--bg)}
+.qa-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.qa-h b{font-size:12.5px;color:var(--gray)}
+.del{font-size:12.5px;color:var(--gray)}
+.del:hover{color:#B3593B}
+
+/* ---------- Modal ---------- */
+.mask{position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(62,52,44,.42);display:none;z-index:60;padding:20px;overflow-y:auto}
+.mask.on{display:flex;align-items:flex-start;justify-content:center}
+.modal{background:var(--white);border-radius:20px;width:100%;max-width:660px;margin:auto;box-shadow:0 20px 60px rgba(62,52,44,.22);animation:pop .2s ease}
+@keyframes pop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+.modal-h{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.modal-h b{font-size:16px}
+.modal-b{padding:22px 24px;max-height:70vh;overflow-y:auto}
+.modal-f{padding:16px 24px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end}
+.x{font-size:22px;color:var(--gray);line-height:1}
+
+.toast{
+  position:fixed;left:50%;bottom:34px;transform:translate(-50%,20px);
+  background:var(--dark);color:#fff;padding:11px 22px;border-radius:99px;font-size:13.5px;
+  opacity:0;pointer-events:none;transition:.25s;z-index:90;box-shadow:0 8px 24px rgba(62,52,44,.24);
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+.mnav{display:none}
+
+/* ---------- 法規清單 ---------- */
+.rulebox{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:15px 16px}
+.rulebox.ok{background:#F2F5EE;border-color:#DBE3D3}
+.rulebox-h{font-size:13px;font-weight:700;margin-bottom:10px;color:#9C4B32}
+
+/* ---------- 人設檔案切換 ---------- */
+.pbar{margin-bottom:22px}
+.pbar-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.pbar-h>span:first-child{font-size:13.5px;font-weight:700}
+.pbar-n{font-size:12px;color:var(--gray)}
+.pchips{display:flex;gap:8px;flex-wrap:wrap}
+.pchip{display:flex;align-items:center;gap:9px;padding:9px 15px;border-radius:12px;
+  border:1px solid var(--line);background:var(--white);transition:.15s;text-align:left}
+.pchip:hover{border-color:var(--orange-soft)}
+.pchip.on{border-color:var(--orange);background:var(--orange-light)}
+.pchip b{font-size:13.5px;font-weight:700;color:var(--dark)}
+.pchip span{font-size:11.5px;color:var(--gray)}
+.pchip.on span{color:#A8462A}
+.pchip.add{border-style:dashed;color:#A8462A;font-size:13px;font-weight:700}
+.pchip.add:hover{background:var(--orange-light)}
+
+.gbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--white);
+  border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:18px;box-shadow:var(--shadow)}
+.gbar-k{font-size:12.5px;color:var(--gray);white-space:nowrap}
+.gbar-sel{width:auto;flex:1;min-width:170px;max-width:330px;padding:9px 12px;font-size:14px;font-weight:700}
+
+@media(max-width:560px){
+  .gbar{gap:8px;padding:12px 13px}
+  .gbar-k{width:100%}
+  .gbar-sel{min-width:0;flex:1 1 100%;max-width:none}
+  .pchip{flex:1;min-width:calc(50% - 4px)}
+}
+
+/* ---------- 人設精靈 ---------- */
+.wiz-wrap{max-width:660px;margin:0 auto}
+.wiz-top{display:flex;align-items:center;gap:11px;margin-bottom:15px}
+.wiz-top .bar{width:4px;height:24px;background:var(--orange);border-radius:2px;flex:0 0 4px}
+.wiz-top .word{font-size:15px;font-weight:700;letter-spacing:.02em}
+.wiz-top .sub{font-size:11.5px;color:var(--gray)}
+.wiz-top .tg{margin-left:auto;font-size:11px;color:var(--medium);background:var(--white);border:1px solid var(--line);padding:4px 12px;border-radius:99px;white-space:nowrap}
+.wiz-track{height:5px;background:var(--line);border-radius:99px;overflow:hidden}
+.wiz-fill{height:100%;background:var(--orange);border-radius:99px;transition:width .35s ease}
+.wiz-lbl{display:flex;justify-content:space-between;font-size:11.5px;color:var(--gray);margin:7px 0 18px;letter-spacing:.03em}
+.wiz-card{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:28px 26px;box-shadow:var(--shadow);animation:rise .3s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.eyebrow{font-size:11.5px;color:#A8462A;letter-spacing:.1em;font-weight:700;margin-bottom:7px}
+.wiz-h{font-size:22px;font-weight:700;line-height:1.45;margin-bottom:7px;letter-spacing:.01em}
+.wiz-d{font-size:13.5px;color:var(--medium);line-height:1.75;margin-bottom:22px}
+.wiz-foot{text-align:center;padding:26px 0 6px;font-size:11.5px;color:var(--gray)}
+
+.gq{margin-bottom:18px;padding-bottom:18px;border-bottom:1px dashed var(--line)}
+.gq:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.gq label{display:block;font-size:13.5px;font-weight:700;margin-bottom:7px;line-height:1.6}
+.qnum{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;
+  background:var(--orange-light);color:#A8462A;font-size:11px;font-weight:700;margin-right:7px}
+
+.offer-row{display:grid;grid-template-columns:1fr 1.35fr auto;gap:8px;margin-bottom:10px;align-items:start}
+.offer-x{background:var(--white);border:1px solid var(--line);border-radius:10px;color:var(--gray);padding:0 13px;height:43px;font-size:15px}
+.offer-x:hover{color:#B3593B;border-color:#B3593B}
+.add-row{font-size:13px;color:#A8462A;background:none;border:1px dashed var(--line);border-radius:11px;padding:11px;width:100%;margin-top:4px}
+.add-row:hover{border-color:#A8462A;background:var(--orange-light)}
+
+.wiz-nav{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap}
+.wiz-nav .btn{padding:12px 22px}
+.grow{flex:1;min-width:130px;text-align:center}
+
+.wlist{list-style:none;margin-bottom:22px}
+.wlist li{display:flex;gap:11px;font-size:13.5px;color:var(--medium);line-height:1.75;margin-bottom:11px}
+.wlist .n{font-weight:700;color:#A8462A;flex:0 0 auto}
+/* li 是 flex 容器，所以裡面每個 <b> 都會變成獨立的 flex item，被壓成一個字一欄。
+   文字一律包在 .t 裡，讓 li 只有「編號 + 內容」兩個 flex item，內容就是正常的文字流。 */
+.wlist li>.t{flex:1 1 auto;min-width:0}
+/* 四大塊：桌機是句子裡的一串（靠 <i> 的頓號串起來），手機拆成四行 */
+.four>span>i{font-style:normal}
+@media(max-width:768px){
+  .four{display:block;margin:9px 0 10px}
+  .four>span{display:block;margin-bottom:4px}
+  .four>span>i{display:none}
+}
+
+.warn.hot{background:var(--orange-light);border-color:var(--orange-soft)}
+.cbrow{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;line-height:1.7;cursor:pointer;font-weight:500}
+.cbrow input{margin-top:4px;accent-color:var(--orange);width:16px;height:16px;flex:0 0 16px}
+
+.otabs{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap}
+.otab{font-size:12.5px;padding:8px 15px;border-radius:99px;border:1px solid var(--line);background:var(--bg);color:var(--medium)}
+.otab:hover{border-color:var(--orange-soft)}
+.otab.on{background:var(--dark);color:var(--white);border-color:var(--dark);font-weight:700}
+.obox{background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:17px;font-size:12.5px;
+  line-height:1.85;white-space:pre-wrap;max-height:400px;overflow-y:auto;color:var(--dark);word-break:break-word}
+.note-box{margin-top:22px;padding:15px 16px;border-radius:11px;background:var(--bg);border:1px dashed var(--line);
+  font-size:12.5px;color:var(--medium);line-height:1.75}
+
+@media(max-width:560px){
+  .wiz-card{padding:22px 18px}
+  .wiz-h{font-size:19px}
+  .offer-row{grid-template-columns:1fr}
+  .offer-x{width:100%;height:38px}
+  .wiz-nav .btn{flex:1;min-width:0}
+}
+
+/* ---------- RWD ---------- */
+@media(max-width:960px){
+  .g4{grid-template-columns:repeat(2,1fr)}
+  .gauto{grid-template-columns:repeat(2,1fr)}
+  .g3,.g2{grid-template-columns:1fr}
+  .split{grid-template-columns:1fr}
+  .sticky{position:static}
+}
+@media(max-width:760px){
+  .side{display:none}
+  .main{padding:20px 16px 96px}
+  .h1{font-size:21px}
+  .mnav{
+    display:flex;position:fixed;left:0;right:0;bottom:0;z-index:50;
+    background:rgba(255,252,248,.96);backdrop-filter:blur(10px);
+    border-top:1px solid var(--line);padding:7px 4px calc(7px + env(safe-area-inset-bottom));
+  }
+  .mnav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;color:var(--gray);padding:5px 2px;border-radius:10px}
+  .mnav button i{font-style:normal;font-size:18px}
+  .mnav button.on{color:var(--orange);font-weight:700}
+  .out{max-height:400px;font-size:12.5px}
+  .modal-b{max-height:62vh}
+  .toast{bottom:82px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ 側邊選單 ============ -->
+  <aside class="side">
+    <div class="brand">
+      <div class="brand-mark">指</div>
+      <div class="brand-txt">
+        <strong>AI 指令小幫手</strong>
+        <span>自媒體老師專用</span>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-lbl">第一步</div>
+      <button data-go="persona" class="on"><i>◈</i>人設定位</button>
+      <div class="nav-lbl">第二步</div>
+      <button data-go="gen"><i>✦</i>指令產生器</button>
+      <div class="nav-lbl">收藏</div>
+      <button data-go="list"><i>▤</i>我的指令庫</button>
+      <div class="nav-lbl">總覽</div>
+      <button data-go="dash"><i>◎</i>儀表板</button>
+    </nav>
+
+    <div class="side-foot">
+      <button class="btn ghost sm" onclick="exportData()">匯出備份</button>
+      <button class="btn ghost sm" onclick="importPick()">匯入備份</button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- ============ 儀表板 ============ -->
+    <section class="page" id="p-dash">
+      <div class="head">
+        <div>
+          <div class="h1">儀表板</div>
+          <div class="sub" id="dashHi">今天想生成什麼？</div>
+        </div>
+        <button class="btn" onclick="go('gen')">＋ 開始產生指令</button>
+      </div>
+
+      <div class="grid g4">
+        <div class="stat">
+          <div class="k">指令總數</div>
+          <div class="v" id="s-total">0<small>筆</small></div>
+          <div class="n" id="s-total-n">還沒有任何紀錄</div>
+        </div>
+        <div class="stat b">
+          <div class="k">本月產生</div>
+          <div class="v" id="s-month">0<small>筆</small></div>
+          <div class="n" id="s-month-n">—</div>
+        </div>
+        <div class="stat s">
+          <div class="k">已收藏</div>
+          <div class="v" id="s-fav">0<small>筆</small></div>
+          <div class="n">加星號的常用指令</div>
+        </div>
+        <div class="stat c">
+          <div class="k">人設完成度</div>
+          <div class="v" id="s-persona">0<small>%</small></div>
+          <div class="bar"><i id="s-persona-bar" style="width:0%"></i></div>
+          <div class="n" id="s-persona-n">—</div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="h2">各類型使用狀況</div>
+        <div class="sub" style="margin-bottom:14px">點卡片可直接跳到該類型的指令產生器</div>
+        <div class="grid gauto" id="typeCards"></div>
+      </div>
+
+      <div class="sec">
+        <div class="h2">最近產生的指令</div>
+        <div class="sub" style="margin-bottom:14px">最新 5 筆</div>
+        <div id="recent"></div>
+      </div>
+
+      <div class="sec">
+        <div class="h2">資料備份</div>
+        <div class="sub" style="margin-bottom:14px">你的人設和指令只存在這台裝置的這個瀏覽器裡，不會上傳到任何地方。換裝置、換瀏覽器、清除瀏覽器資料都會不見——要換裝置就從這裡匯出，到另一台匯入。</div>
+        <div class="row">
+          <button class="btn ghost sm" onclick="exportData()">匯出備份</button>
+          <button class="btn ghost sm" onclick="importPick()">匯入備份</button>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="h2">最近刪除</div>
+        <div class="sub" style="margin-bottom:10px">刪掉的指令和人設會先放在這裡 <b>30 天</b>，期間都可以按「還原」救回來。因為資料存在你自己的瀏覽器裡，沒有伺服器在背後倒數——<b>逾期的項目是在你下次打開這個網站時才會被清掉</b>。這裡最多保留 200 筆，超過會從最舊的開始清。<b>匯出備份不會包含這裡的項目</b>，要保留就先還原再匯出。</div>
+        <div class="sub" id="trashSub" style="margin-bottom:14px"></div>
+        <div id="trashBox"></div>
+        <div class="row" id="trashClearRow" style="display:none">
+          <button class="btn ghost sm" onclick="trashClear()">清空最近刪除</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 人設定位（引導式精靈） ============ -->
+    <section class="page on" id="p-persona">
+      <div class="wiz-wrap">
+        <div class="pbar" id="personaBar"></div>
+
+        <div class="wiz-top">
+          <div class="bar"></div>
+          <div>
+            <div class="word">人設打底機</div>
+            <div class="sub">填一次，之後每一組指令都自動帶入</div>
+          </div>
+          <div class="tg" id="wizTag">開始</div>
+        </div>
+        <div class="wiz-track"><div class="wiz-fill" id="wizFill" style="width:0%"></div></div>
+        <div class="wiz-lbl"><span id="wizL">開始之前</span><span id="wizR">0%</span></div>
+
+        <div class="wiz-card" id="wizRoot"></div>
+
+        <div class="wiz-foot">你的答案只留在這台裝置的這個瀏覽器裡，不會上傳到任何地方——換裝置、換瀏覽器或清除瀏覽器資料都會不見，填完記得匯出備份</div>
+      </div>
+    </section>
+
+    <!-- ============ 指令產生器 ============ -->
+    <section class="page" id="p-gen">
+      <div class="head">
+        <div>
+          <div class="h1">指令產生器</div>
+          <div class="sub">角色與背景已經從人設自動帶入，你只要回答「今天要做什麼」</div>
+        </div>
+      </div>
+
+      <div id="genPersonaBar"></div>
+      <div id="personaWarn"></div>
+
+      <div class="tabs" id="genTabs"></div>
+
+      <div class="split">
+        <div class="card pad">
+          <div class="h2" id="genTitle">—</div>
+          <div class="sub" id="genDesc" style="margin-bottom:20px">—</div>
+          <div id="genFields"></div>
+          <div class="row" style="margin-top:6px">
+            <button class="btn ghost sm" onclick="clearGen()">清空重填</button>
+          </div>
+        </div>
+
+        <div class="sticky">
+          <div class="card pad" style="padding-bottom:18px">
+            <div class="row" style="justify-content:space-between;margin-bottom:14px">
+              <div>
+                <div class="h2" style="margin-bottom:0">產生的指令</div>
+                <div class="sub" id="genCount">0 字</div>
+              </div>
+              <div class="row" style="gap:8px">
+                <button class="btn sm" onclick="copyOut()">複製</button>
+                <button class="btn ghost sm" onclick="saveOut()">存進指令庫</button>
+              </div>
+            </div>
+            <div id="genSteps"></div>
+            <div class="out" id="genOut">左邊填一填，這裡就會即時長出完整指令。</div>
+            <div class="warn" style="margin-top:14px">
+              <span>📋</span>
+              <div>這段已經包含<b>【角色】【任務／目的】【背景】【範例】</b>四大區塊。複製後整段貼給 AI，<b>不要自己刪</b>。不滿意就回他一句「第 3 點再更口語一點」繼續調。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 指令庫 ============ -->
+    <section class="page" id="p-list">
+      <div class="head">
+        <div>
+          <div class="h1">我的指令庫</div>
+          <div class="sub" id="listSub">存起來的指令，下次直接複製就能用。</div>
+        </div>
+        <button class="btn" onclick="openForm()">＋ 手動新增</button>
+      </div>
+
+      <div class="toolbar">
+        <div class="search">
+          <span>🔍</span>
+          <input class="inp" id="q" placeholder="搜尋標題、主題、指令內容、標籤…" oninput="renderList()">
+        </div>
+        <select class="inp" id="fType" style="width:auto;min-width:130px" onchange="renderList()">
+          <option value="">全部類型</option>
+        </select>
+        <select class="inp" id="fFav" style="width:auto;min-width:120px" onchange="renderList()">
+          <option value="">全部</option>
+          <option value="1">★ 只看收藏</option>
+        </select>
+        <select class="inp" id="fSort" style="width:auto;min-width:130px" onchange="renderList()">
+          <option value="new">最新在前</option>
+          <option value="old">最舊在前</option>
+          <option value="az">標題 A→Z</option>
+        </select>
+      </div>
+
+      <div id="listBox"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============ 手機底部選單 ============ -->
+<nav class="mnav">
+  <button data-go="persona" class="on"><i>◈</i>人設</button>
+  <button data-go="gen"><i>✦</i>產生指令</button>
+  <button data-go="list"><i>▤</i>指令庫</button>
+  <button data-go="dash"><i>◎</i>儀表板</button>
+</nav>
+
+<!-- ============ 新增／編輯 Modal ============ -->
+<div class="mask" id="mask" onclick="if(event.target===this)closeForm()">
+  <div class="modal">
+    <div class="modal-h">
+      <b id="mTitle">新增指令</b>
+      <button class="x" onclick="closeForm()">×</button>
+    </div>
+    <div class="modal-b">
+      <div class="field">
+        <label>標題 <span style="color:var(--orange)">＊</span></label>
+        <input class="inp" id="m-title" placeholder="例：母親節活動海報指令">
+      </div>
+      <div class="grid g2" style="gap:0 14px">
+        <div class="field">
+          <label>類型</label>
+          <select class="inp" id="m-type"></select>
+        </div>
+        <div class="field">
+          <label>主題</label>
+          <input class="inp" id="m-topic" placeholder="例：母親節優惠">
+        </div>
+      </div>
+      <div class="field">
+        <label>指令內容 <span style="color:var(--orange)">＊</span></label>
+        <div class="hint">可以直接貼上你調整過的版本。</div>
+        <textarea class="inp" id="m-content" style="min-height:200px"></textarea>
+      </div>
+      <div class="field">
+        <label>標籤</label>
+        <div class="hint">用逗號分隔，例：節慶, 招生, 高互動</div>
+        <input class="inp" id="m-tags" placeholder="節慶, 招生">
+      </div>
+      <div class="field">
+        <label>使用心得／備註</label>
+        <textarea class="inp" id="m-note" style="min-height:70px" placeholder="例：這組給 GPT 效果好，Gemini 要再加一句限制字數"></textarea>
+      </div>
+      <div class="row">
+        <button class="chip" id="m-fav" onclick="toggleFormFav()">☆ 加入收藏</button>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn ghost" onclick="closeForm()">取消</button>
+      <button class="btn" onclick="saveForm()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 檢視 Modal ============ -->
+<div class="mask" id="viewMask" onclick="if(event.target===this)closeView()">
+  <div class="modal">
+    <div class="modal-h">
+      <b id="vTitle">指令內容</b>
+      <button class="x" onclick="closeView()">×</button>
+    </div>
+    <div class="modal-b">
+      <div class="out" id="vBody" style="max-height:none"></div>
+      <div id="vNote"></div>
+    </div>
+    <div class="modal-f">
+      <button class="btn ghost" onclick="closeView()">關閉</button>
+      <button class="btn" id="vCopy">複製指令</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileIn" accept=".json,application/json" style="display:none">
+<div class="toast" id="toast"></div>
+<script>
+/* ==================================================================
+   AI 指令小幫手 — 資料層
+   ================================================================== */
+const K_P = 'aips_persona_v1';
+const K_R = 'aips_records_v1';
+
+const DEF_PERSONA = {
+  /* 【角色】要 AI 扮演誰 */
+  aiRole:'',
+  /* 基本 */
+  nickname:'', handle:'', positioning:'', expertise:'', industry:'',
+  /* 特質與語氣 */
+  commStyle:[], contentEnergy:[], interactStyle:[], customTraits:'',
+  toneRhythm:'', bannedTone:[], toneNote:'',
+  /* 受眾 */
+  ageRange:'', audienceType:[], audienceOther:'',
+  painPoint:'', firstMessage:'', desiredChange:'',
+  /* 故事與優缺點 */
+  storyBefore:'', storyTurning:'', storyResult:'',
+  strengths:'', weaknesses:'',
+  /* 變現與問答 */
+  offers:[{name:'',desc:''}],
+  qa:[{q:'',a:''},{q:'',a:''},{q:'',a:''}],
+  /* 【範例】你自己寫過、覺得好的句子；以及踩過的雷 */
+  examples:[{note:'',text:''}],
+  bestLine:'', bestData:'', worstLine:'',   /* 自己帳號流量最好／最差的封面第一句 */
+  pastFail:'',
+  /* 行動與收尾 */
+  readerAction:[], readerActionOther:'', booking:'',
+  keywords:'', complianceAck:false,
+  step:0
+};
+
+/* 精靈用的選項；wTag / wPick 一律用索引傳值，避免中文標點跑進 HTML 屬性 */
+const OPT = {
+  industry:['美業／醫美相關','心靈療癒／命理','教育／教學／內訓','電商／零售／實體服務','餐飲／食品','自媒體／內容創作','其他'],
+  commStyle:['溫暖鼓勵','直接坦率','理性條理','幽默風趣','感性細膩','犀利提醒','沉穩專業'],
+  contentEnergy:['高能量、有活力','平靜療癒','知性思考','熱血激勵','溫柔陪伴'],
+  interactStyle:['像朋友聊天','像老師教學','像顧問建議','像姊妹交流','保持一點神祕感'],
+  ageRange:['18–24 歲','25–34 歲','35–44 歲','45–54 歲','55 歲以上','橫跨多個年齡層'],
+  audienceType:['個人工作室老闆','上班族','全職媽媽','學生','自媒體新手','同行／同業','企業／團隊窗口'],
+  toneRhythm:['先肯定優點，再溫柔指出可以優化的地方','直接了當，先講重點再解釋','先拋問題，引導對方自己想','用一個小故事帶出重點'],
+  bannedTone:['太浮誇的行銷話術','太生硬的專業術語','太強勢的催促感','說教感','賣慘／博同情','過度謙虛'],
+  readerAction:['主動私訊詢問','按下追蹤','加 LINE 好友','直接下單購買','轉介推薦身邊的人','留言互動','點連結了解更多']
+};
+
+/* 舊版（單頁表單）填過的人設，開檔時自動搬進新欄位，不讓資料掉 */
+function migrateOne(p){
+  const old = p.name || p.job || p.skill || p.aud || p.offer || p.slogan ||
+              (p.tone && p.tone.length) || p.toneExtra;
+  if(!old) return false;
+  if(!p.nickname && p.name) p.nickname = p.name;
+  if(!p.positioning && p.job) p.positioning = p.job;
+  if(!p.expertise && p.skill) p.expertise = p.skill;
+  if(!p.audienceOther && p.aud) p.audienceOther = p.aud;
+  if(p.offer && !(p.offers||[]).some(o => o.name || o.desc)){
+    p.offers = p.offer.split('\n').filter(s => s.trim())
+      .map(s => ({name:s.trim().replace(/^\d+[.、)）]\s*/,''), desc:''}));
+  }
+  const toneTxt = [(p.tone||[]).join('、'), p.toneExtra].filter(Boolean).join('；');
+  if(toneTxt && !p.toneNote) p.toneNote = toneTxt;
+  if(p.slogan && !p.keywords) p.keywords = p.slogan;
+  ['name','job','skill','aud','offer','tone','toneExtra','slogan'].forEach(k => { delete p[k]; });
+  return true;
+}
+/* 中間插了「AI 角色」(2) 與「你的範例」(10) 兩關，舊的關卡編號要往後推 */
+const STEP_REMAP = {0:0, 1:1, 2:3, 3:4, 4:5, 5:6, 6:7, 7:8, 8:9, 9:11, 10:12, 11:13, 12:14};
+function migrateSteps(p){
+  if(p.schemaV === 2) return false;
+  p.step = STEP_REMAP[p.step] !== undefined ? STEP_REMAP[p.step] : 0;
+  p.schemaV = 2;
+  return true;
+}
+function migratePersona(){
+  let moved = 0, stepped = 0;
+  pList.forEach(p => {
+    if(migrateOne(p)) moved++;
+    if(migrateSteps(p)) stepped++;
+  });
+  if(moved || stepped) save();
+  if(moved) toast('已把舊版人設搬到新的引導流程裡 ✓');
+}
+
+/* ---- 人設檔案庫：可以有好幾組，同一時間只有一組是「使用中」 ----
+   persona 永遠指向 pList 裡使用中的那一個物件，所以精靈、指令產生器
+   那些原本直接讀寫 persona 的程式碼都不用改。 */
+const K_PS = 'aips_personas_v1';
+
+function pid(){ return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function newPersona(label){
+  const p = JSON.parse(JSON.stringify(DEF_PERSONA));
+  p.id = pid();
+  p.label = label || '';
+  p.createdAt = Date.now();
+  p.schemaV = 2;   /* 新人設一出生就是新版關卡編號，不要再被 migrateSteps 轉一次 */
+  return p;
+}
+function fillPersona(x){
+  const p = Object.assign(JSON.parse(JSON.stringify(DEF_PERSONA)), x || {});
+  if(!p.id) p.id = pid();
+  if(typeof p.label !== 'string') p.label = '';
+  return p;
+}
+/* 顯示用名稱：優先用自己取的檔名，其次用暱稱 */
+function personaName(p){ return (p && (p.label || p.nickname)) || '未命名人設'; }
+
+let pList = [], pActive = '', persona = null;
+let records = load(K_R, []);
+
+/* ==================================================================
+   最近刪除（刪掉的東西先放這裡 30 天，期間可以還原）
+   這是本機產品，沒有伺服器在背後倒數，所以「過期」是在
+   使用者打開網站、或又刪了新東西的時候才真的被清掉。
+   ================================================================== */
+const K_T = 'aips_trash_v1';
+const TRASH_DAYS = 30;
+const TRASH_MAX  = 200;          /* 不設上限的話，瀏覽器空間會被慢慢吃光 */
+let trash = load(K_T, []);
+
+(function bootPersonas(){
+  let box = null;
+  try{ box = JSON.parse(localStorage.getItem(K_PS)); }catch(e){}
+  if(box && Array.isArray(box.list) && box.list.length){
+    pList = box.list.map(fillPersona);
+    pActive = box.activeId;
+  } else {
+    let one = null;                       // 舊版只有單一人設，包成第一組
+    try{ one = JSON.parse(localStorage.getItem(K_P)); }catch(e){}
+    pList = [fillPersona(one)];
+    pActive = pList[0].id;
+  }
+  if(!pList.some(x => x.id === pActive)) pActive = pList[0].id;
+  persona = pList.find(x => x.id === pActive);
+})();
+/* 產生器草稿：以「人設 id ∷ 指令類型」為 key，換人設不會沿用上一組的答案；
+   而且會存進 localStorage，重整不會整份消失 */
+const K_G = 'aips_gendraft_v1';
+let genState = load(K_G, {});
+let saveWarned = false;
+
+/* 2026-09-11 移除雲端同步，回到純本機儲存。
+   之前的同步設定（帳號與 6 位數密碼）還躺在這些人的瀏覽器裡，
+   功能都拿掉了還留著密碼沒有意義，開啟時直接清掉。 */
+try{ localStorage.removeItem('aips_sync_v1'); }catch(e){}
+let curType = 'poster';
+function gkey(t){ return pActive + '::' + (t || curType); }
+let editId = null;
+let formFav = false;
+
+function load(k, d){
+  try{
+    const v = JSON.parse(localStorage.getItem(k));
+    if(v===null || v===undefined) return JSON.parse(JSON.stringify(d));
+    if(Array.isArray(d)) return Array.isArray(v) ? v : JSON.parse(JSON.stringify(d));
+    return Object.assign(JSON.parse(JSON.stringify(d)), v);
+  }catch(e){ return JSON.parse(JSON.stringify(d)); }
+}
+function save(){
+  /* 蓋一個「最後編輯時間」在正在編輯的這組人設上（匯入合併時用來判斷誰比較新） */
+  if(persona) persona.updatedAt = Date.now();
+  try{
+    localStorage.setItem(K_PS, JSON.stringify({list: pList, activeId: pActive}));
+    localStorage.setItem(K_R, JSON.stringify(records));
+    localStorage.setItem(K_G, JSON.stringify(genState));
+    localStorage.setItem(K_T, JSON.stringify(trash));
+    saveWarned = false;
+  }catch(e){
+    /* 空間滿了、或無痕模式不給存。只提醒一次，不然每打一個字就跳一次 */
+    if(!saveWarned){
+      saveWarned = true;
+      askOK('⚠️ 存不進去了',
+        '<p>你剛才填的東西<b style="color:var(--orange)">沒有存到這台裝置上</b>，重整頁面就會不見。</p>' +
+        '<p style="margin-top:10px">通常是瀏覽器空間滿了，或是你正在用無痕模式。</p>' +
+        '<p style="margin-top:10px">建議現在就到「儀表板 → 資料備份 → 匯出備份」，把資料存成檔案。</p>');
+    }
+  }
+}
+function uid(){ return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('on'), 1900);
+}
+function fmtDate(ts){
+  const d = new Date(ts);
+  const p = n => String(n).padStart(2,'0');
+  return d.getFullYear() + '/' + p(d.getMonth()+1) + '/' + p(d.getDate());
+}
+
+/* ==================================================================
+   指令類型設定
+   ================================================================== */
+const TYPES = {
+  poster: {
+    name:'海報', icon:'🖼️', cls:'',
+    desc:'做新的，或是改你現在正在用的那一張——只換日期、價格、名額，其他一個字都不動。',
+    fields:[
+      {k:'job', t:'chips', label:'你今天要做的是？', req:true,
+       hint:'選「改現有的」的話，等一下要把原本那張圖上傳給 AI。',
+       opts:['做一張全新的海報','改我現有的海報（只改指定內容）']},
+
+      /* ---- 做新的 ---- */
+      {k:'ptype', t:'chips', label:'你今天要做什麼類型的海報？', req:true, showIf: s => !isPosterEdit(s),
+       opts:['文宣海報','活動方案海報','課程招生海報','產品介紹海報','優惠促銷海報','徵才海報','衛教／知識海報']},
+      {k:'topic', t:'text', label:'這張海報的主題是什麼？', req:true, showIf: s => !isPosterEdit(s),
+       hint:'一句話講清楚就好。', ph:'例：母親節美睫買一送一'},
+      {k:'info', t:'area', label:'海報上一定要出現的資訊', req:true, showIf: s => !isPosterEdit(s),
+       hint:'時間、地點、價格、名額、報名方式，有什麼寫什麼，一行一個。',
+       ph:'例：\n活動期間 5/1-5/12\n原價 1800 → 活動價 1200\n限量 20 名\n私訊 IG 報名'},
+      {k:'style', t:'chips', label:'你想要什麼視覺風格？', showIf: s => !isPosterEdit(s),
+       opts:['質感簡約','手繪溫柔','日系雜誌','韓系乾淨','高對比吸睛','復古文青','奢華典雅']},
+      {k:'size', t:'chips', label:'要做成什麼尺寸？', showIf: s => !isPosterEdit(s),
+       opts:['IG 貼文 4:5','IG 限動 9:16','正方形 1:1','A4 直式','橫式 16:9']},
+      {k:'textMode', t:'chips', label:'海報上的文字要 AI 直接生嗎？', showIf: s => !isPosterEdit(s),
+       hint:'選「連字一起生」＝拿到可以直接用的成品；選「只要底圖」＝你自己在 Canva 排字。',
+       opts:['連字一起生，我要可以直接用的成品','只要底圖，文字我自己排']},
+      {k:'cta', t:'text', label:'你希望看到的人做什麼？', showIf: s => !isPosterEdit(s),
+       hint:'這是海報最後那行字。', ph:'例：私訊「母親節」領優惠'},
+      {k:'focusOffer', t:'chips', label:'這篇只推哪一項？', req:true,
+       hint:'一篇只推一項。兩項都講，結果通常是兩項都推不動。選項是你在人設裡填的服務。',
+       opts: offerOpts, showIf: s => !isPosterEdit(s)},
+      {k:'want', t:'chips', label:'看完你希望他做什麼？', req:true,
+       hint:'這一題決定收尾往哪走。沒選的話 AI 會自己猜，常常猜成招生。',
+       opts:['來預約／來體驗服務','來報名課程、當我的學生','私訊詢問價格或細節','先追蹤、建立信任就好','留言互動'], showIf: s => !isPosterEdit(s)},
+
+      /* ---- 改現有的 ---- */
+      {k:'what', t:'text', label:'這張海報原本是什麼？', showIf: isPosterEdit,
+       hint:'一句話就好，幫 AI 抓到脈絡。', ph:'例：9 月手作課的招生海報'},
+      {k:'edits', t:'area', label:'要改哪些地方？', req:true, showIf: isPosterEdit,
+       hint:'一行一個，寫成「原本 → 改成」。只寫你要改的，其他 AI 不會動。',
+       ph:'例：\n9/10（六）→ 10/25（六）\n原價 1800 → 原價 2000\n名額 8 位 → 名額 12 位'},
+      {k:'strict', t:'chips', label:'我沒點名的地方可以動嗎？', showIf: isPosterEdit,
+       opts:['完全不要動，一個字都不要','可以順手修掉明顯的錯字或跑版']},
+
+      {k:'extra', t:'area', label:'還有什麼要交代的？（選填）',
+       hint:'品牌色、不能出現的字、一定要放的 logo 位置…', ph:'例：主色請用米白＋奶茶色，不要用紅色'}
+    ]
+  },
+  carousel: {
+    name:'輪播貼文', icon:'🎞️', cls:'b',
+    desc:'三種路線：全部用 AI 生圖、搭配你自己拍的照片，或是手上只有一張圖、請 AI 看著它裂變成一整則。選錯路線 AI 給的東西會完全用不上。',
+    fields:[
+      {k:'mode', t:'chips', label:'這篇輪播你要走哪一種？', req:true,
+       hint:'A 路線＝你沒有素材，全部請 AI 生圖；B 路線＝你有自己的照片／作品照要用；' +
+            'C 路線＝你手上只有一張圖，請 AI 看著這張圖裂變成一整則輪播。',
+       opts:['A｜AI 生圖・手繪插畫風','A｜AI 生圖・質感攝影風','B｜用我自己的照片','C｜用一張圖裂變成一則輪播']},
+
+      {k:'picWhat', t:'text', label:'這張圖是什麼？（選填）', showIf: isSplit,
+       hint:'留空也可以——AI 看得到圖。但圖上看不出來的東西（品牌、價格、什麼時候拍的）寫在這裡，它才不會亂猜。',
+       ph:'例：我自己接的睫毛作品照，客人是單眼皮'},
+
+      {k:'topic', t:'text', label:'這篇輪播的主題是什麼？', req:true, showIf: s => !isSplit(s),
+       ph:'例：接睫毛前你一定要知道的 5 件事'},
+      {k:'pain', t:'text', label:'這篇要解決觀眾什麼困擾？', showIf: s => !isSplit(s),
+       hint:'講出觀眾心裡那句 OS。', ph:'例：怕接完很假、怕傷睫毛、怕撐不到兩週'},
+      {k:'pages', t:'chips', label:'你想做幾張？',
+       opts:['6 張','8 張','10 張','12 張']},
+      {k:'textMode', t:'chips', label:'圖上的文字要 AI 直接生嗎？',
+       hint:'選「連字一起生」＝拿到可以直接發的成品；選「只要底圖」＝你自己在 Canva 排字，品牌一致性比較好控制。',
+       opts:['連字一起生，我要可以直接發的成品','只要底圖，文字我自己排'],
+       showIf: s => (s.mode||'').indexOf('A') === 0},
+      {k:'goal', t:'chips', label:'這篇的目的是什麼？', showIf: s => !isSplit(s),
+       opts:['衝收藏分享','建立專業信任','導購成交','吸新粉追蹤','互動留言']},
+      {k:'focusOffer', t:'chips', label:'這篇只推哪一項？', req:true,
+       hint:'一篇只推一項。兩項都講，結果通常是兩項都推不動。選項是你在人設裡填的服務。',
+       opts: offerOpts},
+      {k:'want', t:'chips', label:'看完你希望他做什麼？', req:true,
+       hint:'這一題決定收尾往哪走。沒選的話 AI 會自己猜，常常猜成招生。',
+       opts:['來預約／來體驗服務','來報名課程、當我的學生','私訊詢問價格或細節','先追蹤、建立信任就好','留言互動']},
+      {k:'extra', t:'area', label:'還有什麼要交代的？（選填）',
+       ph:'例：不要出現價格、最後一張要放我的 IG 帳號'}
+    ]
+  },
+
+  slides: {
+    name:'簡報', icon:'📊', cls:'s',
+    desc:'教學、講座、銷售提案都能用。會產出大綱＋每頁標題＋要點＋講稿。',
+    fields:[
+      {k:'topic', t:'text', label:'你的簡報主題是什麼？', req:true,
+       ph:'例：一人美業工作室的定價策略'},
+      {k:'aud', t:'text', label:'台下是誰？', req:true,
+       hint:'聽眾的身分與程度，會決定深淺。', ph:'例：剛開業 1 年內的美業老闆娘，怕漲價會流失客人'},
+      {k:'purpose', t:'chips', label:'這場簡報的目的？', req:true,
+       opts:['教學傳授','銷售成交','招生說明','合作提案','經驗分享','內部訓練']},
+      {k:'mins', t:'chips', label:'講多久？',
+       opts:['15 分鐘','30 分鐘','45 分鐘','60 分鐘','90 分鐘']},
+      {k:'pages', t:'chips', label:'大約幾頁？',
+       opts:['10 頁以內','15 頁','20 頁','30 頁']},
+      {k:'take', t:'area', label:'你最想讓聽眾帶走什麼？',
+       hint:'散場後他們只會記得一件事，你希望是哪件？', ph:'例：漲價不是變貴，是換一群更適合你的客人'},
+      {k:'files', t:'chips', label:'你手上有現成資料要給 AI 看嗎？',
+       hint:'選「有附件」的話，指令會變成兩步驟：先做簡報大綱，再請 AI 把你的資料整理成重點筆記加進去。',
+       opts:['沒有附件，全部請 AI 幫我生','有附件（講義／PDF／逐字稿／課程大綱）']},
+      {k:'fileKind', t:'text', label:'你的附件是什麼？（選填）',
+       hint:'寫清楚一點，AI 讀檔時比較知道要抓什麼。', ph:'例：三堂課的上課講義 PDF、學員問答逐字稿'},
+      {k:'extra', t:'area', label:'還有什麼要交代的？（選填）',
+       ph:'例：最後三頁要導到我的陪跑課'}
+    ]
+  },
+
+  shorts: {
+    name:'短影音', icon:'🎬', cls:'c',
+    desc:'兩條路線：你已經知道要講什麼，就走標準腳本；完全沒頭緒，就走乾貨型——AI 會一題一題問你，四題答完才動筆。',
+    fields:[
+      {k:'arch', t:'chips', label:'這次要走哪一種架構？', req:true,
+       hint:'「乾貨型」是給完全沒寫過腳本的人用的：貼給 AI 之後它只會先問你一題，答完才問下一題，你不用先想好內容。',
+       opts:['標準腳本（我已經知道要講什麼）','乾貨型・四段式（AI 一題一題問我）']},
+
+      {k:'topic', t:'text', label:'你今天要做什麼主題的短影音？', req:true, showIf: s => !isGanhuo(s),
+       ph:'例：新手開美睫工作室最容易踩的雷'},
+      {k:'count', t:'chips', label:'要幾支？', showIf: s => !isGanhuo(s),
+       opts:['3 支','4 支','5 支']},
+      {k:'len', t:'chips', label:'每支多長？', showIf: s => !isGanhuo(s),
+       opts:['60 秒','75 秒','90 秒']},
+      {k:'form', t:'chips', label:'你打算怎麼拍？', showIf: s => !isGanhuo(s),
+       hint:'選你真的拍得出來的，AI 才不會給你做不到的分鏡。',
+       opts:['對鏡頭口播','手部操作特寫','畫面配旁白','情境短劇','綠幕／圖卡輔助']},
+      {k:'goal', t:'chips', label:'這批影片的目的？', showIf: s => !isGanhuo(s),
+       opts:['衝觸及漲粉','建立專業信任','導購成交','引導私訊','衝留言互動']},
+      {k:'focusOffer', t:'chips', label:'這篇只推哪一項？', req:true, showIf: s => !isGanhuo(s),
+       hint:'一篇只推一項。兩項都講，結果通常是兩項都推不動。選項是你在人設裡填的服務。',
+       opts: offerOpts},
+      {k:'want', t:'chips', label:'看完你希望他做什麼？', req:true, showIf: s => !isGanhuo(s),
+       hint:'這一題決定收尾往哪走。沒選的話 AI 會自己猜，常常猜成招生。',
+       opts:['來預約／來體驗服務','來報名課程、當我的學生','私訊詢問價格或細節','先追蹤、建立信任就好','留言互動']},
+
+      {k:'gTopic', t:'text', label:'心裡已經有題材了嗎？（選填）', showIf: isGanhuo,
+       hint:'留空也可以——留空的話 AI 第一題會直接給你 5～10 個生活化的題目讓你挑。',
+       ph:'例：寶雅這次補貨我只回購的 3 樣東西'},
+      {k:'extra', t:'area', label:'還有什麼要交代的？（選填）',
+       ph:'例：我不想入鏡講話、我口條慢請放慢語速'}
+    ]
+  },
+
+  plan: {
+    name:'週／月計劃', icon:'🗓️', cls:'s',
+    desc:'依照你的人設和這一檔的行銷目標，把一整週或一整月要發什麼排出來，含鉤子、CTA 與拍攝批次。',
+    fields:[
+      {k:'span', t:'chips', label:'你要排多久的計劃？', req:true,
+       opts:['週計劃（7 天）','月計劃（4 週）']},
+      {k:'goal', t:'text', label:'這段期間的行銷目標是什麼？', req:true,
+       hint:'講具體數字最好，AI 才知道要多用力推。',
+       ph:'例：母親節檔期做到 30 個預約 / 證照班招到 15 人'},
+      {k:'focus', t:'text', label:'這次要主打哪個服務或產品？', req:true,
+       hint:'一次主打一個，貪心什麼都推反而都推不動。',
+       ph:'例：慕曦外泌體金典保養（單堂 3800 元）'},
+      {k:'freq', t:'chips', label:'你打算多常發？',
+       hint:'選你真的做得到的。排太滿最後一則都發不出來。',
+       opts:['每天 1 則','一週 5 則','一週 3 則','一週 2 則']},
+      {k:'formats', t:'chips', label:'主要用什麼形式？',
+       opts:['貼文＋限動','貼文＋Reels','Reels 為主','貼文／限動／Reels 都要']},
+      {k:'start', t:'text', label:'從哪一天開始？（選填）',
+       ph:'例：11/1，或直接寫「下週一」'},
+      {k:'extra', t:'area', label:'還有什麼要交代的？（選填）',
+       ph:'例：中間有三天我出國不能拍，要先排好預錄'}
+    ]
+  },
+};
+const TYPE_KEYS = Object.keys(TYPES);
+/* 指令庫還會存人設指令，所以徽章／篩選用的類型表比產生器多一個 */
+const REC_TYPES = Object.assign({}, TYPES, {persona:{name:'人設指令', icon:'◈', cls:'c'}});
+
+/* ==================================================================
+   最近刪除 — 丟進去、還原、永久刪除
+   ================================================================== */
+function tid(){ return 'tr' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+/* 逾期與超量的清理。回傳有沒有真的清掉東西。 */
+function trashPurge(){
+  const cut = Date.now() - TRASH_DAYS * 86400000;
+  const before = trash.length;
+  trash = trash.filter(t => t && typeof t.deletedAt === 'number' && t.deletedAt > cut);
+  if(trash.length > TRASH_MAX){
+    trash.sort((a, b) => b.deletedAt - a.deletedAt);
+    trash = trash.slice(0, TRASH_MAX);
+  }
+  return before !== trash.length;
+}
+trashPurge();   /* 一打開網站就先清一次逾期的 */
+
+/* 刪除的東西一律先進這裡。存深拷貝，之後畫面再怎麼改都動不到這份。 */
+function trashPush(kind, label, data){
+  trash.unshift({
+    id: tid(), kind: kind, label: label,
+    data: JSON.parse(JSON.stringify(data)),
+    deletedAt: Date.now()
+  });
+  trashPurge();
+}
+
+/* 還原。原本的 id 如果已經被別人佔走（例如清空後又重填），就補一個新的，
+   不然還原完會有兩筆同 id，之後刪除、編輯都會抓錯。 */
+function restoreTrash(id){
+  const t = trash.find(x => x.id === id);
+  if(!t) return;
+  if(t.kind === 'persona'){
+    const p = fillPersona(JSON.parse(JSON.stringify(t.data)));
+    if(pList.some(x => x.id === p.id)) p.id = pid();
+    p.label = p.label || t.label;
+    pList.push(p);
+    pActive = p.id; persona = p;
+    trash = trash.filter(x => x.id !== id);
+    save(); refreshPersonaUI(); renderDash();
+    toast('已還原人設「' + personaName(p) + '」，現在正在用這組 ✓');
+  } else {
+    const r = JSON.parse(JSON.stringify(t.data));
+    if(records.some(x => x.id === r.id)) r.id = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+    records.push(r);
+    records.sort((a, b) => b.createdAt - a.createdAt);
+    trash = trash.filter(x => x.id !== id);
+    save(); renderList(); renderDash();
+    toast('已還原「' + (r.title || '指令') + '」✓');
+  }
+}
+
+/* 這一顆才是真的刪掉，所以講白話：救不回來了 */
+function trashDrop(id){
+  const t = trash.find(x => x.id === id);
+  if(!t) return;
+  askChoice('要永久刪除嗎？',
+    '<p>要永久刪除的是「<b>' + esc(t.label || '未命名') + '</b>」。</p>' +
+    '<p style="margin-top:10px">這一次是<b style="color:var(--orange)">真的救不回來</b>了，' +
+    '它會從最近刪除裡消失。</p>',
+    [{label:'取消', value:0}, {label:'永久刪除', value:1, cls:'danger'}]
+  ).then(ok => {
+    if(!ok){ toast('已取消，你的資料沒有被動到'); return; }
+    trash = trash.filter(x => x.id !== id);
+    save(); renderDash(); toast('已永久刪除');
+  });
+}
+function trashClear(){
+  if(!trash.length) return;
+  const n = trash.length;
+  askChoice('要清空最近刪除嗎？',
+    '<p>裡面有 <b>' + n + '</b> 筆。</p>' +
+    '<p style="margin-top:10px">清空後<b style="color:var(--orange)">全部都救不回來</b>了。' +
+    '如果有想留的，先回去按「還原」再清空。</p>',
+    [{label:'取消', value:0}, {label:'確定清空', value:1, cls:'danger'}]
+  ).then(ok => {
+    if(!ok){ toast('已取消，你的資料沒有被動到'); return; }
+    trash = []; save(); renderDash(); toast('最近刪除已清空');
+  });
+}
+
+function renderTrash(){
+  const box = document.getElementById('trashBox');
+  if(!box) return;
+  trashPurge();
+  const sub = document.getElementById('trashSub');
+  if(sub) sub.textContent = trash.length
+    ? '目前有 ' + trash.length + ' 筆可以還原'
+    : '目前沒有任何刪除紀錄';
+  const bar = document.getElementById('trashClearRow');
+  if(bar) bar.style.display = trash.length ? '' : 'none';
+  if(!trash.length){ box.innerHTML = ''; return; }
+  box.innerHTML = trash.map(t => {
+    const left = Math.max(0, Math.ceil((t.deletedAt + TRASH_DAYS * 86400000 - Date.now()) / 86400000));
+    return '<div class="item">' +
+      '<div class="item-top"><div style="min-width:0"><h4>' + esc(t.label || '未命名') + '</h4></div></div>' +
+      '<div class="meta">' +
+        '<span class="badge">' + (t.kind === 'persona' ? '◈ 人設' : '▤ 指令') + '</span>' +
+        '<span class="tag">還剩 ' + left + ' 天</span>' +
+        '<span class="date">刪除於 ' + fmtDate(t.deletedAt) + '</span>' +
+      '</div>' +
+      '<div class="acts">' +
+        '<button class="btn sm" onclick="restoreTrash(\'' + esc(t.id) + '\')">還原</button>' +
+        '<button class="btn danger sm" onclick="trashDrop(\'' + esc(t.id) + '\')">永久刪除</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+/* ==================================================================
+   美容業廣告用語（依衛生局刊載須知整理）
+   UI 與指令都讀這一份，只會有一個版本
+   ================================================================== */
+const AD_RULES = {
+  nameBad: ['○○醫美中心','○○健康中心','○○病理（療）中心','○○醫療中心','○○醫學美容館'],
+  nameOk:  ['○○美學會館','○○美學館','○○養生館','○○美容館','○○美顏館','○○SPA館'],
+  ok: [
+    ['臉部',   '保濕護膚、亮顏美肌、臉部保養、緊緻肌膚、淨白煥膚、深層潔淨、粉刺調理、抗皺緊膚、嫩白護膚、細緻肌膚、白皙課程'],
+    ['按摩',   '活絡按摩、深層按摩、放鬆按摩、芳香舒緩按摩、精油舒壓按摩、芳香按摩、全方減壓、頭頸放鬆、舒緩肌肉緊繃、通筋活絡、活絡循環、指壓、刮痧、拔罐'],
+    ['美胸美體','美胸手技、美化胸型、美胸保養、胸部拉提按摩、美體雕塑、窈窕美體、窈窕曲線、纖體手技'],
+    ['腿足',   '腰部拉筋保養、腿部舒緩、沐足、腳底按摩'],
+    ['身心',   '放鬆身心、能量養生、身心減壓、全身釋壓、身心淨化、解放紓壓、緩解疲勞感、養生保健、調理養生'],
+    ['其他',   '去角質、時尚彩妝、手足呵護、蜜蠟除毛、水晶指甲、彩繪指甲、修眉、飄眉、紋眼線']
+  ],
+  ban: [
+    ['暗示或影射醫療業務',
+     '淋巴排毒、消水腫、便秘、除斑、抗過敏、乳頭凹陷、乳頭發育、失眠、抗發炎、耳燭法、○○療法、溫灸、媽媽手、美顏針、美白針、肉毒桿菌、雷射除毛、雷波拉皮、電波、微整形醫學、玻尿酸注射、玻尿酸針劑、脈衝光、肉毒桿菌注射、微晶煥膚、果酸換膚、頭療、高壓高氧、眼壓高'],
+    ['涉及影響或改變人體結構及生理機能',
+     '促進淋巴循環、消脂、溶脂、提高脂肪代謝、軟化脂肪、促進脂肪細胞分解、減重、解脂、排毒、溶脂針、電動豐乳器、壯陽、回復性功能、填補凹洞、印堂填平、眼角紋及嘴角紋之填補、膠原修復、除斑除紋'],
+    ['宣稱醫療效能',
+     '改善靜脈曲張、預防感冒、改善慢性疾病、改善膝蓋損傷、防癌、減少落髮、不打針、不吃藥、可達到療效']
+  ]
+};
+
+/* 拼進指令【背景】裡的法規紅線 */
+function adRuleLines(){
+  const L = ['- 法規紅線（美業／醫美廣告，這是台灣衛生局的規定，務必遵守）：'];
+  AD_RULES.ban.forEach(g => L.push('  【禁用｜' + g[0] + '】' + g[1]));
+  L.push('  【可以改用】' + AD_RULES.ok.map(g => g[1]).join('、'));
+  L.push('  【名稱也受規範】不可用：' + AD_RULES.nameBad.join('、') + '；可用：' + AD_RULES.nameOk.join('、'));
+  L.push('  執行方式：寫完之後自己從頭掃一遍，只要出現任何一個禁用詞，就換成「可以改用」清單裡意思最接近的說法，並在結尾附一行「已檢查廣告用語」。');
+  L.push('  如果某個療程本質上就只能用禁用詞描述，不要硬掰，直接告訴我這項不適合寫進公開貼文。');
+  return L;
+}
+
+/* ==================================================================
+   四大區塊：角色 / 任務目的 / 背景 / 範例
+   角色與背景來自人設（設定一次就存著），任務由當下的表單決定，
+   範例是使用者自己寫過、覺得好的句子。
+   ================================================================== */
+const j = a => (a||[]).join('、');
+const tx = v => (v==null ? '' : String(v)).trim().replace(/\n+/g,'；');
+
+/* 沒自己寫【角色】時，用人設幫他湊一句可用的 */
+function suggestRole(p){
+  p = p || persona;
+  const who = p.nickname || p.label || '';
+  const bits = [];
+  bits.push('你是' + (who ? '「' + who + '」' : '我') + '的專屬內容寫手');
+  if(p.industry) bits.push('熟悉' + p.industry + '這一行');
+  if(p.expertise) bits.push('專精' + tx(p.expertise));
+  const tone = j(p.commStyle);
+  if(tone) bits.push('文字風格' + tone);
+  bits.push('寫出來的東西要像真人在說話，不要有 AI 味');
+  return bits.join('，') + '。';
+}
+
+function roleBlock(){
+  const r = tx(persona.aiRole) || suggestRole();
+  return '【角色】\n' + r;
+}
+
+/* 【背景】＝人設裡所有「AI 該知道但不用每次重打」的東西 */
+function bgBlock(){
+  const p = persona, L = [];
+  const put = (k, v) => { const s = tx(v); if(s) L.push('- ' + k + '：' + s); };
+
+  const who = [p.handle, p.positioning].filter(Boolean).join('，');
+  put('我的帳號／定位', who || p.nickname);
+  put('我的專業', p.expertise);
+  if(p.industry) put('產業別', p.industry);
+
+  const aud = j(p.audienceType) + (p.audienceOther ? ((p.audienceType||[]).length ? '、' : '') + p.audienceOther : '');
+  put('受眾', [p.ageRange, aud].filter(Boolean).join('，'));
+  put('他們的困擾', p.painPoint);
+  put('他們私訊我的第一句話通常是', p.firstMessage);
+  put('他們最渴望的改變', p.desiredChange);
+
+  const offers = (p.offers||[]).filter(o => tx(o.name) || tx(o.desc));
+  if(offers.length){
+    put('我賣什麼', offers.map(o => tx(o.name) + (tx(o.desc) ? '（' + tx(o.desc) + '）' : '')).join('；'));
+  }
+
+  put('預約／聯絡動線', p.booking);
+
+  const traits = [j(p.commStyle), j(p.contentEnergy), j(p.interactStyle), tx(p.customTraits)].filter(Boolean).join('／');
+  put('我的個性', traits);
+  put('說話節奏', p.toneRhythm);
+  put('語氣補充', p.toneNote);
+  put('絕對不要出現的語氣', j(p.bannedTone));
+  put('上次踩過的雷', p.pastFail);
+
+  const story = [p.storyBefore, p.storyTurning, p.storyResult].filter(Boolean).map(tx);
+  if(story.length){
+    put('我的故事', story.join(' → '));
+    L.push('- 敘事原則：故事優先於推銷，先讓讀者感受到這是真實經歷，再自然帶出服務。');
+  }
+  put('我的優點（拿來建立信任）', p.strengths);
+  put('我的缺點（拿來拉近距離）', p.weaknesses);
+
+  const act = j(p.readerAction) + (p.readerActionOther ? ((p.readerAction||[]).length ? '、' : '') + p.readerActionOther : '');
+  put('看完我希望讀者做的事', act);
+  put('品牌關鍵詞／自創術語', p.keywords);
+
+  const qa = (p.qa||[]).filter(x => tx(x.q));
+  if(qa.length){
+    L.push('- 客戶最常問我的問題，以及我平常的答法（請優先用我的說法，不要自己編）：');
+    qa.forEach((x, i) => {
+      L.push('  Q' + (i+1) + '：' + tx(x.q));
+      L.push('  A' + (i+1) + '：' + (tx(x.a) || '（我還沒補答案，請依我的專業合理推論，並標註「請老師確認」）'));
+    });
+  }
+
+  if(p.industry === '美業／醫美相關'){
+    adRuleLines().forEach(x => L.push(x));
+  }
+
+  if(!L.length) return '【背景】\n（我還沒填人設，請先問我 5 個問題把背景補齊，再開始執行任務。）';
+  return '【背景】\n' + L.join('\n');
+}
+
+/* 【範例】我自己寫過、覺得好的句子 */
+function exBlock(){
+  const p = persona;
+  const best = tx(p.bestLine), worst = tx(p.worstLine);
+  const ex = (p.examples||[]).filter(x => tx(x.text));
+  if(!best && !worst && !ex.length) return null;
+
+  const L = ['【範例】'];
+  if(best || worst){
+    L.push('下面是我自己帳號的真實數據，不是範本。請先看懂這組對照再動筆。');
+    if(best) L.push('✅ 我目前流量最好的封面第一句：「' + best + '」' + (tx(p.bestData) ? '（' + tx(p.bestData) + '）' : ''));
+    if(worst) L.push('❌ 我流量最差的封面第一句：「' + worst + '」');
+    if(best && worst){
+      L.push('請先用一兩句話分析這兩句差在哪（切入點、情緒、具體程度、有沒有勾到我的受眾），');
+      L.push('之後你幫我寫的每一個鉤子，都要往「好的那一句」的方向靠，並避開「差的那一句」的毛病。');
+    } else {
+      L.push('請抓住這句的語感，但不要照抄。');
+    }
+  }
+  if(ex.length){
+    L.push(best || worst ? '其他我自己滿意的寫法：' : '下面是我自己寫過、我覺得對味的句子。請抓這個語感，但不要照抄。');
+    ex.forEach(x => {
+      const note = tx(x.note) || '我喜歡的寫法';
+      L.push('- ' + note + '：「' + tx(x.text) + '」');
+    });
+  }
+  return L.join('\n');
+}
+
+/* 沒填【範例】時，不要叫 AI 去對照一個不存在的區塊 */
+function tailBlock(hasEx, opt){
+  return ['【最後提醒】',
+    '1. 全程使用台灣人日常會說的繁體中文，不要出現簡體字與中國用語。',
+    '2. 不要用「賦能、閉環、抓手、打造、賦予」這類空話，講人話。',
+    hasEx
+      ? '3. 寫完自己檢查一次：這段話像不像上面【範例】裡那個人寫的？太通用、太有 AI 味就重寫。'
+      : '3. 寫完自己檢查一次：有沒有太通用、太有 AI 味？有的話就照【背景】裡我的個性與說話節奏重寫。',
+    /* 訪談型指令本身就是一題一題問，不能再叫它一次丟三個問題 */
+    (opt && opt.interview)
+      ? '4. 這份指令是「一次只問一題」的訪談流程。不要一次把問題全部丟給我，也不要在四題問完之前就先寫腳本。'
+      : '4. 如果我提供的資訊不足以做好這件事，請先列出 3 個你最需要我補充的問題，等我回答後再開始。'
+  ].join('\n');
+}
+
+/* 把四大區塊組起來：角色 → 任務／目的 → 背景 → 範例 → 輸出要求 → 最後提醒 */
+function assemble(taskLines, outputLines, opt){
+  const ex = exBlock();
+  return [
+    roleBlock(),
+    '【任務／目的】\n' + taskLines.filter(x => x !== null).join('\n'),
+    bgBlock(),
+    ex,
+    '【輸出要求】\n' + outputLines.filter(x => x !== null).join('\n'),
+    tailBlock(!!ex, opt)
+  ].filter(Boolean).join('\n\n');
+}
+
+/* ==================================================================
+   四組指令模板（每一組都走：角色 / 任務目的 / 背景 / 範例）
+   ================================================================== */
+function v(k){ const s = genState[gkey()] || {}; return (s[k]||'').trim(); }
+function or(k, d){ return v(k) || d; }
+
+/* 這篇要推哪一項：直接從人設填的服務清單長出來，選不到就是人設還沒填服務 */
+function offerOpts(){
+  const list = (persona.offers||[]).map(o => (o.name||'').trim()).filter(Boolean);
+  return list.concat(['不推銷，純粹建立信任']);
+}
+
+/* 這篇的紅線——把「只講一件事」和「導向哪裡」寫死，這是 AI 最容易自作主張的兩個地方 */
+function redLines(){
+  const f = or('focusOffer',''), w = or('want','');
+  if(!f && !w) return [];
+  const L = ['', '⚠️ 這篇的紅線（比其他要求都優先）：'];
+  let n = 1;
+  if(f){
+    if(f.indexOf('不推銷') === 0){
+      L.push(n++ + '. 這篇不推銷任何服務，純粹建立信任。不要出現價格、不要出現報名或預約、不要有任何銷售話術。');
+    } else {
+      L.push(n++ + '. 這篇只講「' + f + '」這一項。【背景】裡列的其他服務是給你認識我用的，' +
+             '這一篇連提都不要提，也不要「順便」帶一句。一篇只推一項。');
+    }
+  }
+  if(w){
+    L.push(n++ + '. 這篇的目的是「' + w + '」，收尾必須落在這件事上，不要自作主張換成別的目的。');
+    if(w.indexOf('來預約') === 0 || w.indexOf('私訊詢問') === 0){
+      L.push(n++ + '. 特別注意：這篇是寫給「想找我做服務的客人」看的，不是寫給想學這一行的人看的。' +
+             '不要出現招生、開課、當學生、學技術、轉職、證照這類內容——就算我的故事本身跟學習有關，' +
+             '收尾也要落回「所以我會怎麼對待來找我的客人」，不要變成招生文。');
+    } else if(w.indexOf('來報名課程') === 0){
+      L.push(n++ + '. 特別注意：這篇是寫給「想學這一行、想轉職的人」看的，不是寫給一般消費者看的。');
+    }
+  }
+  return L;
+}
+
+/* 海報：判斷是「做新的」還是「改現有的」 */
+function isPosterEdit(s){ return ((s && s.job) || '').indexOf('改我現有') === 0; }
+
+/* 短影音：判斷是不是走「乾貨型・四段式」這條訪談路線 */
+function isGanhuo(s){ return ((s && s.arch) || '').indexOf('乾貨型') === 0; }
+
+/* 輪播：判斷是不是走 C「一張圖裂變」這條路線 */
+function isSplit(s){ return ((s && s.mode) || '').indexOf('C') === 0; }
+
+const BUILD = {
+  poster(){
+    if(!isPosterEdit(genState[gkey('poster')] || {})) return BUILD.posterNew();
+    return BUILD.posterEdit();
+  },
+
+  posterNew(){
+    return assemble([
+      '幫我做一張「' + or('ptype','海報') + '」。',
+      '- 主題：' + or('topic','（未填，請先問我）'),
+      '- 視覺風格：' + or('style','質感簡約'),
+      '- 輸出尺寸：' + or('size','IG 貼文 4:5'),
+      '- 行動呼籲（CTA）：' + or('cta','（請依主題建議一句）'),
+      '- 這張海報只推：' + or('focusOffer','（未選，請先問我）'),
+      '- 看完我希望他做的事：' + or('want','（未選，請先問我）'),
+      '- 海報上一定要出現的資訊：',
+      (v('info') ? v('info').split('\n').filter(Boolean).map(s => '  ・' + s.trim()).join('\n')
+                 : '  ・（未填，請先問我）'),
+      (v('extra') ? '- 其他要求：' + v('extra') : null)
+    ].concat(redLines()), [
+      '請依序輸出這四段，不要合併：',
+      '',
+      '① 三組主標題方案',
+      '每組：主標（8 字內）＋副標（20 字內）。三組走不同路線——A 直接講好處、B 戳痛點、C 製造好奇。',
+      '每組後面用一句話說明為什麼這樣寫，讓我知道怎麼選。',
+      '',
+      '② 完整海報文案',
+      '把海報上會出現的文字全部寫出來並標明位置：主標／副標／重點資訊區／補充說明／CTA 按鈕文字／最下方小字。',
+      '字數控制在海報看得下的份量，不要寫成一篇文章。',
+      '',
+      '③ 版面配置建議',
+      '用文字畫出由上到下的排版順序，並說明：哪一塊最搶眼、建議配色（給 3-4 個色碼）、字體感覺、留白怎麼抓。',
+      '',
+      '④ 生圖'
+    ].concat(or('textMode','連字一起生，我要可以直接用的成品').indexOf('連字一起生') === 0 ? [
+      '我要的是「可以直接用的成品海報」，不是空白底圖，文字請直接生在畫面上。',
+      '請給我一段生圖指令，內容包含：畫面主體、風格、色調、光線、構圖、比例（' + or('size','IG 貼文 4:5') + '），',
+      '並明確寫出海報上要以繁體中文顯示哪些字、各自放在畫面的哪個位置、哪一行最大。',
+      '文字的規矩：',
+      '- 一律繁體中文，不要簡體、不要英文。',
+      '- 主標要最大最清楚，重點資訊不要被裁掉或壓在複雜背景上。',
+      '- 生完自己檢查一次：字有沒有寫錯、缺筆畫、被切掉。錯了就重生，不要將就。',
+      '- 如果真的生不出正確的中文字，直接告訴我，改成給我「乾淨底圖＋文字排版指示」，不要硬生爛字。'
+    ] : [
+      '我文字自己排版，所以圖上不要出現任何文字。',
+      '給我一段英文 prompt，可直接貼到 ChatGPT 生圖或 Midjourney，',
+      '包含主體、風格、色調、光線、構圖、比例參數，並在畫面某側留出可以放字的空白。',
+      'prompt 裡不要要求產生任何文字。'
+    ]));
+  },
+
+  posterEdit(){
+    const strict = or('strict','完全不要動，一個字都不要');
+    const loose = strict.indexOf('可以順手') === 0;
+    const edits = v('edits')
+      ? v('edits').split('\n').filter(Boolean).map(s => '  ・' + s.trim()).join('\n')
+      : '  ・（未填，請先問我要改哪裡）';
+
+    const text = assemble([
+      '我上傳了一張我現在正在用的海報。' + (v('what') ? '這是「' + v('what') + '」。' : ''),
+      '請你只改我指定的地方，其他一律不要動。',
+      '',
+      '要改的地方（格式是「原本 → 改成」）：',
+      edits,
+      '',
+      '不能動的：整體版面配置、配色、字體、圖片與所有我沒有點名的文字。',
+      (loose ? '例外：如果看到明顯的錯字或跑版，可以順手修掉，但要在說明裡告訴我改了什麼。'
+             : '就算你覺得別的地方可以更好，也不要動。我要的是同一張海報，只有指定內容不一樣。'),
+      (v('extra') ? '- 其他要求：' + v('extra') : null)
+    ], [
+      '請依序輸出：',
+      '',
+      '① 先複誦，不要急著改圖',
+      '把你理解到「要改的地方」逐條列出來給我確認，',
+      '並另外列出你判定「不能動」的元素清單（版面、配色、字體、圖像、其他文字）。',
+      '等我回你「確認」，你再動手改圖。',
+      '',
+      '② 改好的圖',
+      '只替換我指定的文字，其餘位置、字體、字級、顏色、背景盡量維持原樣。',
+      '如果某段文字改完長度差很多、會撞到其他元素，先告訴我，不要自己重排整個版面。',
+      '',
+      '③ 改動說明',
+      '告訴我你實際改了哪幾處，以及有沒有哪裡因為技術限制沒辦法完全保留原樣。',
+      '',
+      '④ 如果你沒辦法直接改圖',
+      '改成給我一段「文字版修改指示」，讓我拿去 Canva 或美圖自己改：',
+      '要改的文字在畫面的哪個位置、原本字體大概是什麼感覺、建議的字級與色碼。'
+    ]);
+
+    return {
+      note: '📎 <b>貼這段之前，先把你現在正在用的那張海報上傳給 AI。</b>' +
+            'ChatGPT／Claude 的對話框都可以直接拖圖片進去。' +
+            '它會先複誦一次要改什麼，你回「確認」它才動手——這樣才不會整張被重畫。',
+      text: text
+    };
+  },
+  carousel(){
+    if(isSplit(genState[gkey('carousel')] || {})) return BUILD.carouselSplit();
+    const mode = or('mode','A｜AI 生圖・手繪插畫風');
+    const isB = mode.indexOf('B') === 0;
+    const pages = or('pages','8 張');
+    const styleLine = mode.indexOf('手繪') > -1
+      ? '統一的手繪插畫風：溫柔線條、低彩度、有手感、像日系繪本'
+      : '統一的質感攝影風：乾淨、留白多、光線柔和、像雜誌內頁';
+
+    const common = [
+      '請依序輸出：',
+      '',
+      '① 三組封面鉤子',
+      '第一張決定生死。三組不同路線：A 痛點型、B 好處型、C 反直覺型。每組 15 字內，並說明適合什麼情況用。',
+      '',
+      '② 每一張的完整文案',
+      '一張一張寫，不要偷懶合併，格式：',
+      '',
+      '【第 N 張】',
+      '主文字：（圖上的大字，12 字內）',
+      '輔助說明：（小字，30 字內，沒有就寫「無」）',
+      '滑下去的理由：（依下面「每兩張一個鉤子」的規則填，不需要的張數寫「無」）',
+      '這張的任務：（一句話說明這張為什麼存在）',
+      '',
+      '▍每兩張要有一個鉤子（這條決定完播率，是最重要的規則）',
+      '除了封面以外，每兩張就要有一張在結尾留下「非往下滑不可」的理由。',
+      '也就是第 2、4、6、8⋯⋯這幾張的「滑下去的理由」不可以是「無」。',
+      '可以用的手法（輪著換，不要每次都用同一招）：',
+      '- 拋一個要下一張才會回答的問題',
+      '- 話講一半停住（「但真正的關鍵其實不是這個⋯⋯」）',
+      '- 預告後面的內容（「尤其是第 5 張那個，八成的人都做反了」）',
+      '- 丟一個反直覺的宣告，下一張才解釋為什麼',
+      '這句話要真的寫進那張圖裡（放在主文字下方或圖的最下緣），不是只寫在企劃裡。',
+      '全部寫完之後自己數一遍：第 2、4、6⋯⋯張是不是都有鉤子？漏掉的補上再給我。',
+      '',
+      '節奏請走：封面鉤子 → 建立共鳴 → 拆解重點（佔最多張）→ 我的專業觀點 → 行動呼籲。',
+      '最後一張要有明確的下一步，不要只寫「追蹤我」。'
+    ];
+
+    const bBlock = [
+      '',
+      '③ 每一張的拍攝／選圖指導',
+      '我用自己的照片，所以請告訴我每張要配什麼畫面，格式：',
+      '',
+      '【第 N 張】',
+      '要拍什麼：（具體到拍什麼東西、什麼角度）',
+      '構圖建議：（文字放哪、主體放哪，避開臉／logo）',
+      '如果我沒有這張照片，替代方案是：（用什麼取代）',
+      '',
+      '④ 排版建議',
+      '照片上的文字怎麼放才看得清楚：字級大小關係、要不要加半透明色塊、字體感覺、3-4 個能搭我照片的色碼。'
+    ];
+
+    const withText = or('textMode','連字一起生，我要可以直接發的成品').indexOf('連字一起生') === 0;
+
+    const aBlock = withText ? [
+      '',
+      '③ 每一張的成品圖（文字要直接生在圖上）',
+      '我沒有現成素材，整組圖都要你生。',
+      '我要的是「可以直接發到 IG 的成品」，不是空白的攝影底圖——',
+      '每一張的文字都必須直接出現在畫面上，不要只給我圖然後叫我自己加字。',
+      '',
+      '整組必須是' + styleLine + '，',
+      '所以請先寫一段「共用風格描述」，之後每張都帶進去，確保 ' + pages + ' 看起來像同一套。',
+      '',
+      '格式：',
+      '【共用風格描述】（一段，含畫面風格、色調、光線、構圖習慣、留白位置、字體感覺）',
+      '【第 N 張】',
+      '　畫面：（要生什麼場景／主體）',
+      '　圖上要顯示的文字：主文字「⋯」／輔助說明「⋯」／滑下去的理由「⋯」',
+      '　生圖指令：（一段完整敘述，包含畫面主體＋共用風格＋比例 4:5，',
+      '　　並明確寫出「畫面上以繁體中文顯示：『（主文字）』，放在畫面（上／中／下）的留白處，字級大、清楚易讀」）',
+      '',
+      '文字的規矩：',
+      '- 一律繁體中文，不要簡體、不要英文、不要注音。',
+      '- 主文字要夠大、要壓在留白處，不要蓋到人臉或畫面重點。',
+      '- 每生完一張，自己檢查：字有沒有寫錯、有沒有缺筆畫、有沒有被裁掉。錯了就重生那一張，不要將就。',
+      '- 如果你的生圖能力真的沒辦法把中文字生對，直接告訴我，改成給我「乾淨底圖＋文字排版指示」，',
+      '　不要硬生出一堆爛字讓我自己發現。',
+      '',
+      '④ 備援排版建議',
+      '萬一某一張的字生壞了、我要自己在 Canva 補：告訴我那張的留白區塊在哪、字級大小關係、3-4 個色碼。'
+    ] : [
+      '',
+      '③ 每一張的生圖指令（只要底圖，不要文字）',
+      '我沒有現成素材，所有圖都要 AI 生，但文字我自己排版，所以圖上不要出現任何文字。',
+      '請給每一張的英文 prompt，可直接貼到 ChatGPT 生圖或 Midjourney。',
+      '整組必須是' + styleLine + '，',
+      '所以請先寫一段「共用風格描述」，之後每張都要帶進去，確保 ' + pages + ' 看起來像同一套。格式：',
+      '',
+      '【共用風格描述】（英文，一段）',
+      '【第 N 張 prompt】（英文，含主體＋共用風格＋構圖＋比例 4:5，並在畫面某側留出可以放字的空白）',
+      '',
+      'prompt 內不要要求產生任何文字。',
+      '',
+      '④ 排版建議',
+      '文字怎麼壓在生成圖上：建議留白區塊在哪、字級大小關係、3-4 個色碼。'
+    ];
+
+    const tailBlock = [
+      '',
+      '⑤ 貼文內文與 Hashtag',
+      '150-250 字的貼文內文，開頭第一行要能單獨當鉤子（IG 只顯示第一行），結尾放一句引導留言的問題。',
+      '另外給 15 個 hashtag，分成「大標籤 3 個、中標籤 7 個、小眾精準標籤 5 個」。'
+    ];
+
+    /* 手機版一口氣叫 AI 生圖很容易失敗，所以指令裡直接規定生圖節奏 */
+    const rhythm = [
+      '',
+      '⑥ 生圖節奏（很重要，請務必照做）',
+      '我會用手機操作，圖必須一張一張生。',
+      '請先把上面每一張的內容（畫面、文字、生圖指令）一次列完給我，然後停下來等我，不要急著生圖。',
+      '我說「幫我生成第一張」，你才生第一張；生完等我說「幫我生成第二張」，你再生下一張，依此類推。',
+      '不要一次把 ' + pages + '全部生完，也不要我沒開口就自己往下生——一口氣生會失敗，或只生出一張。',
+      '每生完一張，只要回我「第 N 張完成，要生下一張嗎？」就好，不用重述 prompt。'
+    ];
+
+    const text = assemble([
+      '幫我做一篇 IG 輪播貼文，' + pages + '。',
+      '- 主題：' + or('topic','（未填，請先問我）'),
+      '- 要解決觀眾的困擾：' + or('pain','（請依我的受眾推論）'),
+      '- 這篇的目的：' + or('goal','建立專業信任'),
+      '- 這篇只推：' + or('focusOffer','（未選，請先問我）'),
+      '- 看完我希望他做的事：' + or('want','（未選，請先問我）'),
+      '- 製作路線：' + mode
+    ].concat(v('extra') ? ['- 其他要求：' + v('extra')] : []).concat(redLines()),
+      common.concat(isB ? bBlock : aBlock).concat(tailBlock).concat(isB ? [] : rhythm));
+
+    if(isB) return text;
+    return {
+      note: '📱 <b>用手機生圖，一定要一張一張來。</b>跟 GPT 討論完之後，先說「幫我生成第一張」，' +
+            '等它生完再說「幫我生成第二張」，依此類推。' +
+            '一口氣叫它把 ' + esc(pages) + '全部生完，手機版很容易失敗、或者只生出一張。' +
+            '（這段規則我已經寫進指令裡了，但你自己也要記得照這個節奏跟它講。）',
+      text: text
+    };
+  },
+
+  /* C 路線：手上只有一張圖，請 AI 看著這張圖裂變成一整則輪播。
+     重點是「先看圖 → 不懂就問我 → 不准腦補」，再給一個完整版本＋三個開頭＋三個結尾。 */
+  carouselSplit(){
+    const pages = or('pages','8 張');
+    const picWhat = v('picWhat');
+
+    const text = assemble([
+      '我會給你一張圖，請你用這張圖裂變成一則 IG 輪播貼文，' + pages + '。',
+      '',
+      '⚠️ 開始之前先確認：你有沒有真的看到我給你的那張圖？',
+      '沒有收到圖的話，直接回我一句「請先把圖片上傳給我」就好，不要憑空開始寫。',
+      '',
+      '⚠️ 不准腦補：圖上看不出來的東西——品牌、價格、時間、地點、成分、功效、我做了什麼——',
+      '一律先問我，不要自己編一個聽起來合理的答案填進去。',
+      '寫錯的資訊比空著更糟，因為我不一定會發現。',
+      picWhat ? '- 這張圖是：' + picWhat : null,
+      '- 這篇只推：' + or('focusOffer','（未選，請先問我）'),
+      '- 看完我希望他做的事：' + or('want','（未選，請先問我）')
+    ].concat(v('extra') ? ['- 其他要求：' + v('extra')] : []).concat(redLines()), [
+      '請依序輸出：',
+      '',
+      '① 你從這張圖看到什麼',
+      '先用 3-5 句話講你實際看到的東西：主體是什麼、場景、氛圍、圖上有沒有文字或數字。',
+      '只講你真的看得到的，看不清楚就說看不清楚。',
+      '',
+      '② 你需要我補的資訊（如果需要的話）',
+      '這張圖要變成一篇有說服力的輪播，還缺什麼？一次最多問我 3 個問題，問完停下來等我回答。',
+      '問題要具體、好回答（例如「這是你自己的作品嗎？」「做完維持多久？」），',
+      '不要問「你的品牌定位是什麼」這種大題目。',
+      '如果圖上的資訊加上我的【背景】已經夠寫了，就直接說「資訊夠了」跳到 ③，不要為了問而問。',
+      '',
+      '③ 三個開頭鉤子（第一張封面用）',
+      '三組走不同路線：A 痛點型、B 好處型、C 反直覺型。每組 15 字內。',
+      '每一組後面用一句話說明：這句適合什麼情況用、會勾到哪一種人。',
+      '',
+      '④ 一個完整版本的輪播（' + pages + '）',
+      '先挑你自己覺得最好的那個鉤子往下寫，寫一個完整版本就好，不要三個版本都寫。',
+      '一張一張寫，不要偷懶合併，格式：',
+      '',
+      '【第 N 張】',
+      '主文字：（圖上的大字，12 字內）',
+      '輔助說明：（小字，30 字內，沒有就寫「無」）',
+      '這張的畫面怎麼來：（原圖直接用／原圖裁哪一塊、放大哪個細節／純色字卡／需要我另外補拍什麼）',
+      '滑下去的理由：（依下面的規則填，不需要的張數寫「無」）',
+      '',
+      '▍每兩張要有一個鉤子（這條決定完播率，是最重要的規則）',
+      '除了封面以外，第 2、4、6、8⋯⋯這幾張的「滑下去的理由」不可以是「無」。',
+      '手法輪著換，不要每次都用同一招：拋一個下一張才回答的問題／話講一半停住／',
+      '預告後面的內容／丟一個反直覺的宣告下一張才解釋。',
+      '這句話要真的寫進那張圖裡，不是只寫在企劃裡。',
+      '全部寫完自己數一遍，漏掉的補上再給我。',
+      '',
+      '▍畫面的規矩',
+      '我手上就只有這一張圖。所以請盡量靠「裁切、放大細節、局部特寫、加純色字卡」把它撐成 ' + pages + '，',
+      '不要假設我還有別的照片。真的非補不可的張數，明確告訴我「這張你要自己補拍什麼」，',
+      '並且給我一個「沒補拍的話可以怎麼替代」的方案。',
+      '',
+      '⑤ 三個結尾（最後一張＋CTA）',
+      '三個不同路線讓我挑，例如：軟性邀請型／限時行動型／留言互動型。',
+      '每一個都要寫出「最後一張圖上的字」＋「貼文結尾那句話」，',
+      '並用一句話說明這個結尾適合什麼時候用。',
+      '三個都要落在我上面說的目的上，不要自己換成別的目的。',
+      '',
+      '⑥ 貼文內文與 Hashtag',
+      '150-250 字的貼文內文，開頭第一行要能單獨當鉤子（IG 只顯示第一行）。',
+      '另外給 15 個 hashtag，分成「大標籤 3 個、中標籤 7 個、小眾精準標籤 5 個」。'
+    ]);
+
+    return {
+      note: '📎 <b>先把圖丟給 AI，再貼這段指令。</b>順序反了它會先開始亂寫。' +
+            '它看完圖如果有不懂的地方會回頭問你——那不是它壞掉，是它在避免亂編，照實回答就好。',
+      text: text
+    };
+  },
+
+  slides(){
+    const hasFiles = or('files','沒有附件，全部請 AI 幫我生').indexOf('有附件') === 0;
+    const kind = or('fileKind','講義、課程大綱或逐字稿');
+
+    const step1 = assemble([
+      '幫我做一份簡報。' + (hasFiles ? '（我手上有現成資料，等你做完大綱我會上傳給你，先不用等。）' : ''),
+      '- 簡報主題：' + or('topic','（未填，請先問我）'),
+      '- 聽眾是誰：' + or('aud','（未填，請先問我）'),
+      '- 簡報目的：' + or('purpose','教學傳授'),
+      '- 演講長度：' + or('mins','30 分鐘'),
+      '- 預計頁數：' + or('pages','15 頁'),
+      '- 我最想讓聽眾帶走的一件事：' + or('take','（請幫我提煉一句）'),
+      (v('extra') ? '- 其他要求：' + v('extra') : null)
+    ], [
+      '請依序輸出：',
+      '',
+      '① 簡報大綱',
+      '整場的章節結構，標明每段講幾分鐘、佔幾頁。',
+      '邏輯走：破冰鉤子 → 點出問題 → 建立共識 → 我的方法 → 實際案例 → 行動指引 → 收尾。',
+      '',
+      '② 逐頁內容',
+      '每一頁都要寫，不要跳過，格式：',
+      '',
+      '【第 N 頁】',
+      '頁面標題：（10 字內）',
+      '頁面重點：（條列 2-4 點，每點 20 字內，這是投影片上真的會出現的字）',
+      '視覺建議：（該放圖表／照片／大字／流程圖，具體說明）',
+      '口說講稿：（我站在台上會講的話，口語、完整、可以直接照念，約 100-150 字）',
+      '',
+      '重要：投影片上的字要少，講稿的話要完整。不要把講稿直接貼到投影片上。',
+      '',
+      '③ 三個能讓人記住的橋段',
+      '一個開場破冰、一個中場互動提問、一個收尾金句。要符合我的說話風格，不要太做作。',
+      '',
+      '④ 可能會被問的問題',
+      '列出聽眾最可能舉手問的 5 個問題，並幫我準備回答方向。',
+      (hasFiles ? '' : null),
+      (hasFiles ? '做完以上四項先停在這裡等我，我接著會上傳我手上的資料給你。' : null)
+    ]);
+
+    if(!hasFiles) return step1;
+
+    const step2 = assemble([
+      '接續上一步。我剛剛上傳了附件：' + kind + '。',
+      '請你先把附件的內容整理成條列式重點筆記，再把這些重點整合進你剛剛幫我做的那份簡報裡。',
+      '- 簡報主題：' + or('topic','（同上）'),
+      '- 聽眾是誰：' + or('aud','（同上）'),
+      (v('extra') ? '- 其他要求：' + v('extra') : null)
+    ], [
+      '請依序輸出：',
+      '',
+      '① 附件重點筆記',
+      '把我上傳的資料整理成條列式重點：',
+      '- 一條一個重點，每條 20 字內，不要寫成段落',
+      '- 依主題分組，每組給一個小標',
+      '- 標明這條出自附件的哪一段／哪一頁，方便我回頭對照',
+      '- 只寫附件裡真的有的東西。附件沒提到的不要自己補、不要自己延伸',
+      '',
+      '② 這些重點要放進簡報的哪裡',
+      '一條一條告訴我：',
+      '- 這個重點要插進第幾頁、放在該頁的哪個位置',
+      '- 如果需要新增頁面，說明新增在第幾頁後面，並直接給我完整的新頁內容',
+      '  （頁面標題／頁面重點／視覺建議／口說講稿，格式跟上一步一樣）',
+      '',
+      '③ 更新後的完整簡報',
+      '把整合後的版本從第 1 頁重新輸出一次，格式跟上一步一樣，讓我可以直接照著做。',
+      '新增或修改過的頁面請在標題後面標上「（新增）」或「（已更新）」，我才知道差在哪。',
+      '',
+      '④ 衝突與缺口',
+      '- 如果附件的說法跟你上一步寫的內容不一致，把衝突列出來問我要用哪一個，不要自己決定。',
+      '- 如果附件裡有我沒提到但很重要的東西，也列出來問我要不要加。',
+      '- 如果附件內容不足以支撐某一頁，直接說哪一頁還缺什麼。'
+    ]);
+
+    return [
+      {label:'第一步：做簡報', note:'', text: step1},
+      {label:'第二步：把附件變成筆記',
+       note:'貼第二步之前，<b>先把附件（' + esc(kind) + '）上傳給 AI</b>——ChatGPT／Claude 的對話框都可以直接拖檔案進去。等它說讀完了，再貼下面這段。',
+       text: step2}
+    ];
+  },
+  shorts(){
+    if(isGanhuo(genState[gkey('shorts')] || {})) return BUILD.shortsGanhuo();
+    const cnt = or('count','3 支');
+    const len = or('len','60 秒');
+    const form = or('form','對鏡頭口播');
+    return assemble([
+      '幫我寫 ' + cnt + ' 支 ' + len + ' 的短影音腳本。',
+      '- 主題：' + or('topic','（未填，請先問我）'),
+      '- 拍攝形式：' + form,
+      '- 這批的目的：' + or('goal','建立專業信任'),
+      '- 這批只推：' + or('focusOffer','（未選，請先問我）'),
+      '- 看完我希望他做的事：' + or('want','（未選，請先問我）')
+    ].concat(v('extra') ? ['- 其他要求：' + v('extra')] : []).concat(redLines()), [
+      '請依序輸出：',
+      '',
+      '① ' + cnt + '的主題規劃',
+      '同一個大主題底下切成 ' + cnt + ' 不同角度，不要互相重複。每支一行說明：講什麼、為什麼觀眾會想看完。',
+      '',
+      '② 每一支的完整腳本',
+      '一支一支寫完整，格式：',
+      '',
+      '─────────────',
+      '【第 N 支】影片標題：（15 字內）',
+      '',
+      '▍前 3 秒鉤子',
+      '直接寫出我要說的第一句話，並說明為什麼這句抓得住人。',
+      '',
+      '▍完整逐字稿',
+      '我要照念的完整內容，抓好 ' + len + ' 對應的字數。用台灣人講話的方式寫，可以有停頓、有口語，不要書面語。',
+      '每 10-15 秒換一個小重點，不要一路平鋪直敘。',
+      '',
+      '▍分鏡與拍攝建議',
+      '依「' + form + '」這個形式，說明每段畫面拍什麼、運鏡怎麼動、什麼時候切畫面。只給我一個人也拍得出來的建議。',
+      '',
+      '▍字幕重點字',
+      '哪幾個關鍵詞要放大／變色，讓沒開聲音的人也看得懂。',
+      '',
+      '▍結尾 CTA',
+      '最後一句說什麼，引導他做什麼。',
+      '',
+      '▍發布用文案與 Hashtag',
+      '一段 80 字內的貼文文字 ＋ 10 個 hashtag。',
+      '─────────────',
+      '',
+      '③ 拍攝順序建議',
+      '如果我今天只有 2 小時，告訴我這 ' + cnt + ' 要先拍哪一支、哪些鏡頭可以一次拍完共用。'
+    ]);
+  },
+
+  /* 乾貨型・四段式：給完全沒寫過腳本的人。
+     產出的不是腳本，是一份「訪談指令」——AI 一次只問一題，四題問完才動筆。 */
+  shortsGanhuo(){
+    const seed = v('gTopic');
+    const text = assemble([
+      '我要做一支「乾貨型短影音」，但我還沒想好內容。',
+      '請你先用四個問題訪談我，四題問完之後，才開始幫我寫腳本。',
+      '',
+      '⚠️ 最重要的規則：一次只問我一題。',
+      '我回答完你再問下一題。四題沒問完之前，不要開始寫腳本、不要先給我大綱、也不要先摘要這份指令。',
+      '',
+      '問題要生活化、簡單，讓完全不會寫腳本的人也答得出來。',
+      '不要一開始就問我受眾分析、痛點分析、市場定位這種難題。',
+      '題材從我的生活經驗找就好，例如：好物分享、寶媽用品、嬰幼兒用品、寶雅／大創必買、' +
+        '旅行準備、景點攻略、美食、工作小技巧、生活方法、省錢、省時間、踩雷經驗、懶人包。',
+      seed ? '' : null,
+      seed ? '- 我心裡已經有的題材：' + seed + '（第 1 題可以直接從這個往下問，幫我確認清楚就好）' : null
+    ].concat(v('extra') ? ['- 其他要求：' + v('extra')] : []), [
+      '請直接從第 1 題開始問我，不要先講你的計畫，也不要先重複這份指令的內容。',
+      '如果我的【背景】還沒填完，也不要另外開一輪問卷來補，就照下面這四題問下去。',
+      '',
+      '━━━ 第一階段｜訪談（一次只問一題）━━━',
+      '',
+      '第 1 題｜你今天想分享什麼？',
+      '　→ 我如果說「不知道」，就直接給我 5～10 個生活化的題目讓我挑，我選一個就好。',
+      '',
+      '第 2 題｜你為什麼會想分享這個？',
+      '　→ 我如果答得很短，繼續追問我：是因為好用？方便？省錢？省時間？',
+      '　　 以前踩過雷？用了之後差很多？還是很多人根本不知道？',
+      '',
+      '第 3 題｜如果只能告訴大家 1～3 個重點，你最想講哪幾個？',
+      '　→ 我如果講得很亂，用簡單的問題幫我把真正有用的資訊問出來。',
+      '　　 不要自己腦補，也不要幫我補上我沒說過的細節。',
+      '',
+      '第 4 題｜看完之後，你最希望觀眾做什麼？',
+      '　→ 我如果不知道，給我簡單選項：收藏、留言、分享、追蹤、去試試看、留言拿清單。',
+      '',
+      '訪談規則：',
+      '- 一次只問一題，等我回答完再問下一題。',
+      '- 我的回答資訊不夠，就繼續反問我，問到夠了再進下一題。',
+      '- 四題全部問完之前，一個字的腳本都不要寫。',
+      '',
+      '━━━ 第二階段｜四題問完之後，照「乾貨四段式」整理 ━━━',
+      '',
+      '① 叫住她　　　　　前 3 秒直接讓對的人停下來。',
+      '② 給她留下來的理由　讓她知道繼續看可以得到什麼。',
+      '③ 真的教她　　　　把我提供的內容整理成簡單、能執行的 1～3 個重點。',
+      '④ 告訴她下一步　　給一個很小、很容易做的 CTA。',
+      '',
+      '━━━ 第三階段｜輸出（不要只給我一個答案）━━━',
+      '',
+      '1. 鉤子 3 個選項',
+      '　每一個都是我可以直接念出來的第一句話，並各用一句話說明為什麼這句會讓人停下來。',
+      '',
+      '2. 完整乾貨腳本 3 個版本',
+      '　每一版都照四段式寫成可以直接照念的完整逐字稿，並標上每一段大約幾秒。',
+      '　三版要走不同路線（例如：直接講重點／先講我踩過的雷／先講很多人的誤解），不要只是換字。',
+      '',
+      '3. CTA 3 個選項',
+      '　由小到大排，最小的那個要小到觀眾不用思考就能做。',
+      '',
+      '━━━ 長度與語氣 ━━━',
+      '- 每一支控制在 45～60 秒念得完的字數。',
+      '- 語氣要像真人在分享自己的生活經驗，不要像老師上課，也不要寫得很專業。',
+      '- 我要的是「我剛好知道這個，所以分享給你」的感覺。',
+      '- 只能用我在訪談裡講過的內容，不要自己補上我沒說過的功效、數字或品牌名。'
+    ], {interview: true});
+
+    return {
+      note: '這份貼給 AI 之後，它會先問你第 1 題——一次只問一題，四題答完才會出腳本。不要催它，照著答就好。',
+      text: text
+    };
+  },
+
+  plan(){
+    const span = or('span','週計劃（7 天）');
+    const isMonth = span.indexOf('月計劃') === 0;
+    const unit = isMonth ? '這個月' : '這一週';
+
+    const schedule = isMonth
+      ? [
+          '③ 完整排程表（以「週」分組）',
+          '月計劃請分成第 1～4 週，每一週先給該週主軸（一句話），再列出該週的每一則。',
+          '格式：',
+          '',
+          '── 第 N 週｜主軸：（一句話）──',
+          '【第 N 天（星期X）｜日期】',
+          '形式：（貼文／限動／Reels）',
+          '主題：',
+          '鉤子：（第一句話或封面字，15 字內）',
+          '內容重點：（2-3 點）',
+          'CTA：',
+          '這則的任務：（漲粉／建立信任／導購／互動，四選一）'
+        ]
+      : [
+          '③ 完整排程表',
+          '一則一則列出來，格式：',
+          '',
+          '【第 N 天（星期X）｜日期】',
+          '形式：（貼文／限動／Reels）',
+          '主題：',
+          '鉤子：（第一句話或封面字，15 字內）',
+          '內容重點：（2-3 點）',
+          'CTA：',
+          '這則的任務：（漲粉／建立信任／導購／互動，四選一）'
+        ];
+
+    return assemble([
+      '幫我排一份' + span + '的內容計劃。',
+      '- 這段期間的行銷目標：' + or('goal','（未填，請先問我）'),
+      '- 這次要主打的服務／產品：' + or('focus','（未填，請先問我）'),
+      '- 發文頻率：' + or('freq','一週 3 則'),
+      '- 主要形式：' + or('formats','貼文＋限動'),
+      '- 開始日期：' + or('start','（未指定，請從下週一開始排，並標好星期）'),
+      (v('extra') ? '- 其他要求：' + v('extra') : null)
+    ], [
+      '請依序輸出：',
+      '',
+      '① ' + unit + '的主軸',
+      '用一句話定調這段期間要打什麼，並說明為什麼這樣打——要連結到我的受眾困擾與這次的目標。',
+      '',
+      '② 內容配比',
+      '教學型／信任型／變現型／互動型各佔幾成，並說明理由。',
+      '提醒：變現型不要超過三成，整段期間一直在賣會掉互動，也會讓人取消追蹤。'
+    ].concat(schedule).concat([
+      '',
+      '④ 檔期節奏',
+      '把' + unit + '切成幾個階段（暖身 → 加溫 → 開賣 → 收尾 → 補刀），標明每個階段在第幾天到第幾天，',
+      '以及每個階段的任務是什麼。不要一開始就叫賣。',
+      '',
+      '⑤ 製作批次建議',
+      '哪幾則可以一次拍完、一次做完，幫我把工作量壓縮成最少的開機次數。',
+      '如果我某幾天不能拍，明確告訴我哪幾則要提前預錄。',
+      '',
+      '⑥ 檢查點',
+      (isMonth ? '每一週結束時要看哪幾個數字、看到什麼狀況要調整什麼，具體給我判斷標準。'
+               : '這一週結束時要看哪幾個數字、看到什麼狀況下週要調整什麼，具體給我判斷標準。'),
+      '',
+      '⑦ 三個備用主題',
+      '萬一某一則臨時做不出來，給我三個可以直接頂上、成本最低的替代主題。'
+    ]));
+  }
+};
+
+/* ==================================================================
+   導覽
+   ================================================================== */
+function go(view){
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.getElementById('p' + '-' + view).classList.add('on');
+  document.querySelectorAll('[data-go]').forEach(b => b.classList.toggle('on', b.dataset.go === view));
+  window.scrollTo({top:0, behavior:'smooth'});
+  if(view === 'dash') renderDash();
+  if(view === 'gen') renderGen();
+  if(view === 'list') renderList();
+  if(view === 'persona') renderWizard();
+}
+document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
+
+/* ==================================================================
+   儀表板
+   ================================================================== */
+const SCORE_CHECKS = [
+  p => !!p.aiRole,                                   /* 【角色】*/
+  p => !!p.nickname,
+  p => !!p.handle,
+  p => !!p.positioning,
+  p => !!p.expertise,
+  p => !!p.industry,
+  p => (p.commStyle||[]).length > 0,
+  p => (p.contentEnergy||[]).length > 0 || (p.interactStyle||[]).length > 0,
+  p => !!p.ageRange || (p.audienceType||[]).length > 0,
+  p => !!p.painPoint,
+  p => !!p.desiredChange,
+  p => !!p.storyBefore || !!p.storyTurning || !!p.storyResult,
+  p => !!p.strengths || !!p.weaknesses,
+  p => !!p.toneRhythm,
+  p => (p.offers||[]).some(o => (o.name||'').trim()),
+  p => (p.qa||[]).filter(x => (x.q||'').trim() && (x.a||'').trim()).length >= 3,
+  p => !!p.bestLine || (p.examples||[]).some(x => (x.text||'').trim()),   /* 【範例】*/
+  p => !!p.worstLine,                                     /* 拿來對照的反面教材 */
+  p => (p.readerAction||[]).length > 0,
+  p => !!p.booking
+];
+function scoreOf(p){
+  let n = 0;
+  SCORE_CHECKS.forEach(f => { try{ if(f(p)) n++; }catch(e){} });
+  return Math.round(n / SCORE_CHECKS.length * 100);
+}
+function personaScore(){ return scoreOf(persona); }
+
+function renderDash(){
+  const now = new Date();
+  const ym = now.getFullYear() + '-' + (now.getMonth()+1);
+  const monthCnt = records.filter(r => {
+    const d = new Date(r.createdAt);
+    return d.getFullYear() + '-' + (d.getMonth()+1) === ym;
+  }).length;
+  const favCnt = records.filter(r => r.fav).length;
+  const sc = personaScore();
+
+  document.getElementById('s-total').innerHTML = records.length + '<small>筆</small>';
+  document.getElementById('s-month').innerHTML = monthCnt + '<small>筆</small>';
+  document.getElementById('s-fav').innerHTML = favCnt + '<small>筆</small>';
+  document.getElementById('s-persona').innerHTML = sc + '<small>%</small>';
+  document.getElementById('s-persona-bar').style.width = sc + '%';
+  document.getElementById('s-persona-n').textContent =
+    '使用中：' + personaName(persona) + (pList.length > 1 ? '（共 ' + pList.length + ' 組）' : '');
+
+  document.getElementById('s-total-n').textContent =
+    records.length ? '最近一筆：' + fmtDate(records[0].createdAt) : '還沒有任何紀錄';
+  document.getElementById('s-month-n').textContent = (now.getMonth()+1) + ' 月累計';
+
+  document.getElementById('dashHi').textContent = sc < 100
+    ? '「' + personaName(persona) + '」還沒填完（' + sc + '%），先去補一下，指令品質差很多。'
+    : '目前套用「' + personaName(persona) + '」這組人設，今天想生成什麼？';
+
+  // 類型卡
+  document.getElementById('typeCards').innerHTML = TYPE_KEYS.map(k => {
+    const t = TYPES[k];
+    const n = records.filter(r => r.type === k).length;
+    return '<button class="stat ' + t.cls + '" style="text-align:left" onclick="go(\'gen\');pickType(\'' + k + '\')">' +
+      '<div class="k">' + t.icon + ' ' + t.name + '指令</div>' +
+      '<div class="v">' + n + '<small>筆</small></div>' +
+      '<div class="n">點我開始產生 →</div></button>';
+  }).join('');
+
+  // 最近
+  const r5 = records.slice(0,5);
+  document.getElementById('recent').innerHTML = r5.length
+    ? r5.map(r => itemHTML(r, true)).join('')
+    : '<div class="card empty"><em>✎</em><p>還沒有存過任何指令</p>' +
+      '<button class="btn" onclick="go(\'gen\')">去產生第一組指令</button></div>';
+
+  renderTrash();
+}
+
+/* ==================================================================
+   人設定位 — 引導式精靈
+   ================================================================== */
+let wizTab = 'gpt';
+
+/* 這次打開網頁之後，有沒有真的按過「開始打底」進入填寫流程。
+   進度（persona.step）是存在 localStorage 裡的，但一打開就直接跳回第 7 步很嚇人，
+   所以一律先停在首頁，由使用者自己決定要繼續還是重來。這個旗標不存檔，關掉分頁就歸零。 */
+let wizEntered = false;
+
+const WIZ_LABEL = ['開始之前','基本資料','AI 角色','特質勾選','目標受眾','你的故事','優點與缺點',
+                   '語氣風格','主要服務','客戶問答','你的範例','內容目標','品牌關鍵詞','廣告用語提醒','完成'];
+
+/* 第 13 關（廣告用語）只有選了美業／醫美才會出現 */
+function wizSeq(){
+  const all = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14];
+  return all.filter(i => i !== 13 || persona.industry === '美業／醫美相關');
+}
+
+/* ---- 狀態操作：文字欄位只存不重繪，才不會打字打到一半失焦 ---- */
+function wSet(k, v){
+  persona[k] = v; save();
+  if(k === 'nickname'){ renderPersonaBar(); renderGenBar(); }
+}
+function wCheck(k, v){ persona[k] = v; save(); }
+function wTag(k, i){
+  const o = OPT[k][i];
+  const a = persona[k] = persona[k] || [];
+  const x = a.indexOf(o);
+  if(x > -1) a.splice(x, 1); else a.push(o);
+  save(); renderWizard();
+}
+function wPick(k, i){
+  const o = OPT[k][i];
+  persona[k] = (persona[k] === o) ? '' : o;
+  save(); renderWizard();
+}
+function wTop(){ window.scrollTo({top:0, behavior:'smooth'}); }
+function wNext(){ const s = wizSeq(), i = s.indexOf(persona.step); if(i < s.length - 1){ persona.step = s[i+1]; save(); renderWizard(); wTop(); } }
+function wPrev(){ const s = wizSeq(), i = s.indexOf(persona.step); if(i > 0){ persona.step = s[i-1]; save(); renderWizard(); wTop(); } }
+function wGo(n){ wizEntered = true; persona.step = n; save(); renderWizard(); wTop(); }
+
+/* 上次填到第幾步（給人看的序號，跟右上角的 STEP N 同一套算法）。0＝還停在首頁 */
+function savedStepNo(){
+  const i = wizSeq().indexOf(persona.step);
+  return i > 0 ? i : 0;
+}
+/* 首頁那顆按鈕。有舊紀錄就先問，不要默默把人丟回第 N 步。
+   已經在流程裡的人（例如從第 1 步按「上一步」退回首頁）不用再問一次，直接往下走。 */
+function wStart(){
+  const n = savedStepNo();
+  if(wizEntered || !n){ wGo(wizSeq()[1]); return; }
+  askChoice('要恢復上一次的紀錄嗎？',
+    '<p>你上次填到<b style="color:var(--orange)">第 ' + n + ' 步</b>。</p>' +
+    '<p style="margin-top:10px">「繼續上次的紀錄」會直接回到第 ' + n + ' 步接著填；' +
+    '「清空，重新做一份」會把「' + esc(personaName(persona)) + '」這組人設清乾淨。</p>',
+    [{label:'清空，重新做一份', value:'reset', cls:'danger'},
+     {label:'繼續上次的紀錄', value:'resume', cls:''}]
+  ).then(v => {
+    if(v === 'resume'){ wGo(persona.step || wizSeq()[1]); return; }
+    if(v === 'reset') wReset();
+  });
+}
+
+/* 清空一律要二次確認——不管是從首頁的對話框來，還是從完成頁那顆「清空重新填」來 */
+function wReset(){
+  askChoice('確定要清除嗎？',
+    '<p>清除前的內容會放進<b style="color:var(--orange)">最近刪除</b>，' +
+    '<b>30 天內</b>可以到儀表板救回來。</p>' +
+    '<p style="margin-top:10px">會被清掉的是「' + esc(personaName(persona)) + '」這一組人設，' +
+    '你的指令庫跟其他組人設不會被動到。</p>',
+    [{label:'取消', value:0}, {label:'確定清除', value:1, cls:'danger'}]
+  ).then(ok => {
+    if(!ok){ toast('已取消，你的資料沒有被動到'); return; }
+    const i = pList.findIndex(x => x.id === pActive);
+    /* 清空前先留一份到最近刪除，不然 13 關填的東西一按就沒了 */
+    if(scoreOf(persona) > 0) trashPush('persona', personaName(persona) + '（清空前）', persona);
+    const fresh = newPersona(persona.label);
+    fresh.id = persona.id;
+    fresh.createdAt = persona.createdAt;
+    pList[i] = fresh; persona = fresh;
+    save(); refreshPersonaUI(); renderDash();   /* refreshPersonaUI 會把 wizEntered 歸零，清完回到首頁 */
+    toast('已清空，清空前的內容放在最近刪除，30 天內可還原');
+  });
+}
+function wOffer(i, k, v){ persona.offers[i][k] = v; save(); }
+function wOfferAdd(){ persona.offers.push({name:'',desc:''}); save(); renderWizard(); }
+function wOfferDel(i){
+  persona.offers.splice(i, 1);
+  if(!persona.offers.length) persona.offers.push({name:'',desc:''});
+  save(); renderWizard();
+}
+function wQa(i, k, v){ persona.qa[i][k] = v; save(); }
+function wQaAdd(){ persona.qa.push({q:'',a:''}); save(); renderWizard(); }
+function wQaDel(i){
+  persona.qa.splice(i, 1);
+  if(!persona.qa.length) persona.qa.push({q:'',a:''});
+  save(); renderWizard();
+}
+
+/* ---- 版面組件 ---- */
+function hHead(eyebrow, title, desc){
+  return '<div class="eyebrow">' + eyebrow + '</div><div class="wiz-h">' + title + '</div>' +
+         (desc ? '<div class="wiz-d">' + desc + '</div>' : '');
+}
+function hEye(step){
+  const s = wizSeq();
+  return 'STEP ' + s.indexOf(step) + '／' + (s.length - 1);
+}
+function hText(label, hint, key, ph, multi){
+  const v = esc(persona[key] || '');
+  const body = multi
+    ? '<textarea class="inp" oninput="wSet(\'' + key + '\',this.value)" placeholder="' + esc(ph||'') + '">' + v + '</textarea>'
+    : '<input class="inp" value="' + v + '" oninput="wSet(\'' + key + '\',this.value)" placeholder="' + esc(ph||'') + '">';
+  return '<div class="field"><label>' + label + '</label>' +
+         (hint ? '<div class="hint">' + hint + '</div>' : '') + body + '</div>';
+}
+function hChips(label, hint, key, multi){
+  const cur = persona[key];
+  const btns = OPT[key].map((o, i) => {
+    const on = multi ? (cur||[]).indexOf(o) > -1 : cur === o;
+    return '<button class="chip' + (on ? ' on' : '') + '" onclick="' +
+           (multi ? 'wTag' : 'wPick') + '(\'' + key + '\',' + i + ')">' + esc(o) + '</button>';
+  }).join('');
+  return '<div class="field"><label>' + label + '</label>' +
+         (hint ? '<div class="hint">' + hint + '</div>' : '') +
+         '<div class="chips">' + btns + '</div></div>';
+}
+function hGuide(n, q, key, ph){
+  return '<div class="gq"><label><span class="qnum">' + n + '</span>' + q + '</label>' +
+    '<textarea class="inp" oninput="wSet(\'' + key + '\',this.value)" placeholder="' + esc(ph) + '">' +
+    esc(persona[key] || '') + '</textarea></div>';
+}
+function hNav(label){
+  const s = wizSeq(), i = s.indexOf(persona.step);
+  return '<div class="wiz-nav">' +
+    (i > 0 ? '<button class="btn ghost" onclick="wPrev()">上一步</button>' : '') +
+    '<button class="btn grow" onclick="wNext()">' + (label || '下一步') + '</button></div>';
+}
+
+/* ---- 每一關 ---- */
+/* ---- 範例（【範例】區塊的資料）---- */
+function wEx(i, k, val){ persona.examples[i][k] = val; save(); }
+function wExAdd(){ persona.examples.push({note:'',text:''}); save(); renderWizard(); }
+function wExDel(i){
+  persona.examples.splice(i, 1);
+  if(!persona.examples.length) persona.examples.push({note:'',text:''});
+  save(); renderWizard();
+}
+function fillRole(){
+  persona.aiRole = suggestRole();
+  save(); renderWizard();
+  toast('先幫你湊了一句，改成你自己的話會更準');
+}
+
+/* ---- 每一關 ---- */
+function wiz0(){
+  const sc = personaScore(), saved = savedStepNo();
+  return hHead('開始之前', '先花 15 分鐘，把自己的人設打好底',
+      '這一份填完，之後每次下指令都只要補「今天要做什麼」，角色跟背景系統會自動幫你貼上去。想到什麼先寫，不用一次想到完美，之後隨時能改。' +
+      '每答一題自動存檔（僅限這台裝置的這個瀏覽器；清除瀏覽器資料會消失，建議填完立刻匯出備份）。') +
+    (saved ? '<div class="warn" style="margin-bottom:22px"><span>💾</span><div>' +
+      '<b>你上次填到第 ' + saved + ' 步。</b>按下面那顆按鈕，可以選擇接著填，或是清空重做。</div></div>' : '') +
+    '<ul class="wlist">' +
+      '<li><span class="n">1</span><div class="t">好指令一定有四塊：' +
+        '<span class="four">' +
+          '<span><b>角色</b> — 要 AI 扮演誰<i>、</i></span>' +
+          '<span><b>任務</b> — 今天要做什麼<i>、</i></span>' +
+          '<span><b>背景</b> — 你是誰、賣什麼、對誰說<i>、</i></span>' +
+          '<span><b>範例</b> — 你喜歡的句子<i>。</i></span>' +
+        '</span>' +
+        '這裡填的是角色、背景、範例，任務留到產生指令時再問。</div></li>' +
+      '<li><span class="n">2</span><div class="t">只勾你「原本就有」的特質，不要選你想成為但還不是的樣子——這樣寫出來的內容才會像你自己在說話，不會翻車。</div></li>' +
+      '<li><span class="n">3</span><div class="t">填完會產出一段可以直接貼進 ChatGPT 的「人設指令」，同時這份人設也會自動接到後面四種指令產生器裡。</div></li>' +
+    '</ul>' +
+    '<div class="wiz-nav"><button class="btn grow" onclick="wStart()">' + (sc > 0 || saved ? '繼續打底' : '開始打底') + '</button>' +
+    (sc > 0 ? '<button class="btn ghost" onclick="wReset()">整份重新填</button>' : '') + '</div>';
+}
+
+function wiz1(){
+  return hHead(hEye(1), '基本資料', '先取一個你在內容裡想被稱呼的名字，再用一句話講清楚你是誰、幫誰、做到什麼。') +
+    hText('暱稱／人設名稱', '在內容裡你想怎麼被稱呼？可以是本名、藝名或工作室名。', 'nickname', '例：Roxy、AMA salon') +
+    hText('IG／主要經營的帳號', '寫成 @ 開頭。AI 之後寫 CTA、寫署名會用到。', 'handle', '例：@ama.roxy') +
+    hText('一句話定位', '公式：我是幫（誰）做到（什麼結果）的（身分）。', 'positioning',
+          '例：中壢在地、療癒手作風的美業工作室') +
+    hText('你的專業是什麼', '你最會、講起來最有底氣的那一塊。這決定 AI 敢不敢用專業口吻替你說話。', 'expertise',
+          '例：臉部保養療程、輕熟齡肌膚調理', true) +
+    hChips('所屬產業別', '這會決定後面要不要提醒你廣告用語的地雷。', 'industry', false) +
+    hNav();
+}
+
+function wiz2(){
+  return hHead(hEye(2), '要 AI 扮演誰',
+      '這是每一份指令的第一句話，也是最關鍵的一塊。你不先指定角色，AI 就會拿它預設的萬用行銷腔回你——內容有沒有「AI 味」幾乎都是差在這裡。') +
+    '<div class="warn hot" style="margin-bottom:22px"><span>🎭</span><div><b>寫法：</b>' +
+      '「妳是 ○○（品牌）的 ××（職稱），△ 年經驗，專寫⋯⋯」。越具體越好，' +
+      '連「不走網紅風」這種限制都可以直接寫進去。</div></div>' +
+    hText('AI 要扮演的角色', '不知道怎麼下筆就按下面那顆，我先用你的人設湊一句，你再改成自己的話。', 'aiRole',
+          '例：妳是 AMA salon（中壢美業）的療癒系 IG 小編，10 年經驗，專寫不走網紅風的療程介紹', true) +
+    '<button class="add-row" onclick="fillRole()">✨ 幫我依人設自動帶一句</button>' +
+    '<div class="hint" style="margin-top:10px">留空也能用，系統會自動幫你湊，但自己寫的一定比較準。</div>' +
+    hNav();
+}
+
+function wiz3(){
+  return hHead(hEye(3), '你的特質勾選', '把「原本就有的個性」整理成標籤，而不是演一個不是自己的角色。') +
+    '<div class="warn hot" style="margin-bottom:22px"><span>💡</span><div><b>防翻車提醒：</b>' +
+      '只勾你真的擁有、平常就會表現出來的特質。人設跟真人不符，內容會失去記憶點，也很容易被熟識的人看出破綻。</div></div>' +
+    hChips('溝通風格（可複選）', null, 'commStyle', true) +
+    hChips('內容能量感（可複選）', null, 'contentEnergy', true) +
+    hChips('跟受眾互動的方式（可複選）', null, 'interactStyle', true) +
+    hText('自訂特質（選填）', '上面沒有的形容詞，或朋友、學生形容你的用詞。', 'customTraits',
+          '例：龜毛、很會安慰人、講話很直但不傷人') +
+    hNav();
+}
+
+function wiz4(){
+  return hHead(hEye(4), '你的目標受眾', '先勾出輪廓，再用三個小情境把「他們到底是誰」想具體。') +
+    hChips('主要年齡層', null, 'ageRange', false) +
+    hChips('身分背景（可複選）', null, 'audienceType', true) +
+    hText('其他身分補充（選填）', null, 'audienceOther', '例：中壢在地、想保養但不走醫美的女性') +
+    hGuide(1, '他們半夜滑手機、腦子裡在煩惱的問題是什麼？', 'painPoint',
+           '例：想保養又怕踩雷，看醫美廣告覺得太誇張不敢去') +
+    hGuide(2, '如果他們鼓起勇氣私訊你，第一句話通常會怎麼打？', 'firstMessage',
+           '例：想請問一下你們的療程費用大概多少？') +
+    hGuide(3, '他們最渴望的改變，用一句話講是什麼？', 'desiredChange',
+           '例：每個月有一次真正放鬆、被好好照顧的時間') +
+    hNav();
+}
+
+function wiz5(){
+  return hHead(hEye(5), '你的故事', '這是內容裡最有記憶點的部分。用三個問題把它挖出來，不用寫得很文青，講白話就好。') +
+    hGuide(1, '開始做現在這件事之前，你的生活或工作是什麼樣子？', 'storyBefore',
+           '例：一直是美業工作室老闆，那時候完全沒在經營社群') +
+    hGuide(2, '發生了什麼事、或什麼契機，讓你決定開始？', 'storyTurning',
+           '例：看到同行靠自媒體招到客人，加上店裡員工要養，決定報名學習') +
+    hGuide(3, '具體的成果是什麼？盡量講數字或明確例子，越具體越有說服力', 'storyResult',
+           '例：學習 3 個月後，第一個月業績就成長了一萬元') +
+    hNav();
+}
+
+function wiz6(){
+  return hHead(hEye(6), '優點與缺點', '這兩個都能變成內容切角——優點建立信任，缺點讓人覺得你真實、有共鳴。') +
+    hText('我的優點', '可以轉化成「為什麼要信任我」的內容。', 'strengths',
+          '例：很有耐心、會先鼓勵再糾正，客人不會害怕問問題', true) +
+    hText('我的缺點', '可以轉化成「真實不完美」的內容，拉近距離。', 'weaknesses',
+          '例：一開始很怕鏡頭、常常拖延不敢發第一篇', true) +
+    hNav();
+}
+
+function wiz7(){
+  return hHead(hEye(7), '語氣風格', '決定你的內容「聽起來」是什麼感覺，也決定哪些說法絕對不要出現。') +
+    hChips('說話節奏', null, 'toneRhythm', false) +
+    hChips('絕對不要出現的語氣（可複選）', '這欄比你想像中重要——AI 最容易翻車的就是自作主張的行銷腔。', 'bannedTone', true) +
+    hText('語氣補充（選填）', null, 'toneNote',
+          '例：可以保留一點行動呼籲的急迫感，但不要太溫吞；不要用驚嘆號', true) +
+    hNav();
+}
+
+function wiz8(){
+  const rows = persona.offers.map((o, i) =>
+    '<div class="offer-row">' +
+      '<input class="inp" value="' + esc(o.name) + '" oninput="wOffer(' + i + ',\'name\',this.value)" placeholder="服務名稱">' +
+      '<input class="inp" value="' + esc(o.desc) + '" oninput="wOffer(' + i + ',\'desc\',this.value)" placeholder="一句話說明（建議帶價格）">' +
+      '<button class="offer-x" onclick="wOfferDel(' + i + ')">✕</button>' +
+    '</div>').join('');
+  return hHead(hEye(8), '主要服務／Offer', '列出你想透過內容推廣的服務或商品，最多 5 項。把價格帶進去，AI 寫文案時比較知道分寸。') +
+    '<div class="field"><label>你賣什麼</label>' +
+    '<div class="hint">左邊填服務名稱，右邊用一句話說明。</div>' + rows +
+    (persona.offers.length < 5 ? '<button class="add-row" onclick="wOfferAdd()">＋ 新增一項服務</button>' : '') +
+    '</div>' + hNav();
+}
+
+function wiz9(){
+  const rows = persona.qa.map((x, i) =>
+    '<div class="gq">' +
+      '<label><span class="qnum">' + (i+1) + '</span>客戶最常問的問題' +
+      (persona.qa.length > 1 ? '<button class="del" style="float:right;font-weight:400" onclick="wQaDel(' + i + ')">刪除</button>' : '') +
+      '</label>' +
+      '<input class="inp" style="margin-bottom:8px" value="' + esc(x.q) + '" oninput="wQa(' + i + ',\'q\',this.value)" ' +
+        'placeholder="例：做臉多久做一次才有效？">' +
+      '<textarea class="inp" oninput="wQa(' + i + ',\'a\',this.value)" ' +
+        'placeholder="你平常怎麼回答？用你跟客人講話的方式寫，越像你越好">' + esc(x.a) + '</textarea>' +
+    '</div>').join('');
+  return hHead(hEye(9), '客戶最常問你的問題',
+      '這是背景裡最值錢的一段。把客戶最常問的問題＋你平常怎麼回答寫下來，AI 產出的貼文和腳本就會直接命中真正的困惑，而不是講一堆漂亮廢話。建議至少填 3 組。') +
+    rows +
+    '<button class="add-row" style="margin-top:14px" onclick="wQaAdd()">＋ 再加一組問答</button>' +
+    hNav();
+}
+
+function wiz10(){
+  const rows = persona.examples.map((x, i) =>
+    '<div class="gq">' +
+      '<label><span class="qnum">' + (i+1) + '</span>這句是什麼情況用的' +
+      (persona.examples.length > 1 ? '<button class="del" style="float:right;font-weight:400" onclick="wExDel(' + i + ')">刪除</button>' : '') +
+      '</label>' +
+      '<input class="inp" style="margin-bottom:8px" value="' + esc(x.note) + '" oninput="wEx(' + i + ',\'note\',this.value)" ' +
+        'placeholder="例：輪播貼文封面、限動問句">' +
+      '<textarea class="inp" oninput="wEx(' + i + ',\'text\',this.value)" ' +
+        'placeholder="把那句話原封不動貼進來">' + esc(x.text) + '</textarea>' +
+    '</div>').join('');
+
+  return hHead(hEye(10), '你自己的數據，比任何範本都準',
+      '打開 IG 洞察報告，把互動最高和最低的兩則找出來。AI 拿到這組對照，就能分析出你的受眾到底吃哪一套，而不是給你誰都能用的罐頭鉤子。') +
+
+    '<div class="warn hot" style="margin-bottom:22px"><span>📊</span><div>' +
+      '<b>怎麼找：</b>IG →「洞察報告」→「你分享的內容」→ 依<b>觸及</b>或<b>儲存</b>排序，' +
+      '看最上面那則和最下面那則，把它們的<b>封面第一句話</b>打進來就好。</div></div>' +
+
+    '<div class="gq">' +
+      '<label><span class="qnum" style="background:#DCEBD8;color:#4A6B41">✓</span>你目前<b>流量最好</b>的那則，封面第一句是什麼？</label>' +
+      '<textarea class="inp" oninput="wSet(\'bestLine\',this.value)" ' +
+        'placeholder="例：我媽拐我去學接睫毛，我卻在那裡找到了自己">' + esc(persona.bestLine || '') + '</textarea>' +
+      '<input class="inp" style="margin-top:8px" value="' + esc(persona.bestData || '') + '" oninput="wSet(\'bestData\',this.value)" ' +
+        'placeholder="數據多少？（選填）例：觸及 1.2 萬、儲存 340">' +
+    '</div>' +
+
+    '<div class="gq">' +
+      '<label><span class="qnum" style="background:#F0D9D2;color:#9C4B32">✕</span>反過來，<b>流量最差</b>的那則，封面第一句是什麼？</label>' +
+      '<div class="hint" style="margin:-2px 0 8px">這句一樣重要。AI 會拿它跟上面那句對照，找出你的受眾為什麼滑掉。</div>' +
+      '<textarea class="inp" oninput="wSet(\'worstLine\',this.value)" ' +
+        'placeholder="例：本月新品上架，歡迎詢問">' + esc(persona.worstLine || '') + '</textarea>' +
+    '</div>' +
+
+    '<div style="margin-top:24px;padding-top:22px;border-top:1px solid var(--line)">' +
+      '<div class="h2" style="font-size:14px;margin-bottom:4px">其他你喜歡的句子（選填）</div>' +
+      '<div class="hint" style="margin-bottom:14px">還有哪些寫法你自己很滿意？多給幾句，語感會更準。</div>' +
+      rows +
+      '<button class="add-row" style="margin-top:14px" onclick="wExAdd()">＋ 再加一句範例</button>' +
+    '</div>' +
+
+    '<div style="margin-top:24px;padding-top:22px;border-top:1px solid var(--line)">' +
+      hText('上次哪個版本讓你覺得不對？', '寫下來，AI 會避開同樣的問題。', 'pastFail',
+            '例：之前請 AI 直接生「為什麼你的臉總是又乾又緊繃」，太像廣告詞不像我會說的話', true) +
+    '</div>' +
+    hNav();
+}
+function wiz11(){
+  return hHead(hEye(11), '內容目標', '讀者看完你的內容後，你希望他做什麼？這會決定每一篇的結尾怎麼收。') +
+    hChips('讀者看完後的行動（可複選）', null, 'readerAction', true) +
+    hText('其他行動補充（選填）', null, 'readerActionOther', '例：報名體驗課、填寫預約表單') +
+    hText('預約／聯絡動線', 'AI 寫 CTA 時會直接把這個寫進去，不用你每次補。', 'booking',
+          '例：IG DM 或 LINE @jct4615L') +
+    hNav();
+}
+
+function wiz12(){
+  const isLast = wizSeq().indexOf(13) < 0;
+  return hHead(hEye(12), '品牌關鍵詞（選填）',
+      '如果你有自創的方法論名稱、口頭禪或常用詞，寫在這裡；沒有也完全沒關係，可以先留空。') +
+    hText('品牌關鍵詞／自創術語', null, 'keywords',
+          '例：每月一次的自我修復、療癒手作風', true) +
+    hNav(isLast ? '產生我的人設指令 →' : '下一步');
+}
+
+function wiz13(){
+  const banHtml = AD_RULES.ban.map(g =>
+    '<div style="margin-bottom:12px"><b style="color:#9C4B32">🚫 ' + g[0] + '</b>' +
+    '<div style="font-size:12.5px;line-height:1.85;margin-top:3px">' + esc(g[1]) + '</div></div>').join('');
+  const okHtml = AD_RULES.ok.map(g =>
+    '<div style="margin-bottom:9px"><b style="color:#4A6B41">✓ ' + g[0] + '</b>' +
+    '<div style="font-size:12.5px;line-height:1.85;margin-top:3px">' + esc(g[1]) + '</div></div>').join('');
+
+  return hHead(hEye(13), '廣告用語提醒',
+      '你選了「美業／醫美相關」。下面這份清單是衛生局的刊載須知，先看過再繼續——這整份會自動寫進你每一份指令裡，AI 會照著避開。') +
+
+    '<div class="rulebox">' +
+      '<div class="rulebox-h">不可刊登（會被開罰）</div>' + banHtml +
+    '</div>' +
+
+    '<div class="rulebox ok" style="margin-top:14px">' +
+      '<div class="rulebox-h" style="color:#4A6B41">可以改用這些說法</div>' + okHtml +
+    '</div>' +
+
+    '<div class="rulebox" style="margin-top:14px">' +
+      '<div class="rulebox-h">連店名／館名也受規範</div>' +
+      '<div style="font-size:12.5px;line-height:1.9">' +
+        '<b style="color:#9C4B32">🚫 不可用：</b>' + esc(AD_RULES.nameBad.join('、')) + '<br>' +
+        '<b style="color:#4A6B41">✓ 可以用：</b>' + esc(AD_RULES.nameOk.join('、')) +
+      '</div>' +
+    '</div>' +
+
+    '<div class="warn hot" style="margin-top:16px"><span>☎️</span><div>' +
+      '<b>有任何疑義，直接打電話問當地衛生局</b>，不要相信網路上流傳的版本。這份清單是給 AI 當防呆用的，最終責任還是在刊登的人身上。</div></div>' +
+
+    '<label class="cbrow" style="margin-top:18px"><input type="checkbox"' + (persona.complianceAck ? ' checked' : '') +
+      ' onchange="wCheck(\'complianceAck\',this.checked)">我知道了，之後生成內容時會避開這些字眼</label>' +
+    '<div class="hint" style="margin-top:10px">不管有沒有勾，只要產業別選了美業／醫美，這份清單都會自動寫進指令的【背景】裡。</div>' +
+    hNav('產生我的人設指令 →');
+}
+function wiz14(){
+  return hHead('完成', '你的人設打底完成了',
+      '「GPT 人設指令」是要貼給 ChatGPT／Claude 的，貼上之後它就會記得你；「人設卡」是給你自己或學生對照用的摘要。') +
+    '<div class="otabs">' +
+      '<button class="otab' + (wizTab === 'gpt' ? ' on' : '') + '" onclick="wTabSet(\'gpt\')">GPT 人設指令</button>' +
+      '<button class="otab' + (wizTab === 'card' ? ' on' : '') + '" onclick="wTabSet(\'card\')">人設卡摘要</button>' +
+    '</div>' +
+    '<div class="obox">' + esc(wOutText()) + '</div>' +
+    '<div class="row" style="margin-top:13px">' +
+      '<button class="btn grow" onclick="wCopyOut()">複製這段文字</button>' +
+      '<button class="btn ghost" onclick="wSaveOut()">存進指令庫</button>' +
+    '</div>' +
+    '<div class="note-box"><b>下一步：</b>切到左邊的「指令產生器」。你剛填的<b>角色</b>和<b>背景</b>會自動貼在每一份指令最前面，' +
+      '你只要回答「今天要做什麼」，剩下的系統幫你組好。</div>' +
+    '<div class="wiz-nav">' +
+      '<button class="btn ghost" onclick="wPrev()">回上一步修改</button>' +
+      '<button class="btn ghost" onclick="wReset()">清空重新填</button>' +
+      '<button class="btn grow" onclick="go(\'gen\')">去產生指令 →</button>' +
+    '</div>';
+}
+
+const WIZ_BODY = [wiz0,wiz1,wiz2,wiz3,wiz4,wiz5,wiz6,wiz7,wiz8,wiz9,wiz10,wiz11,wiz12,wiz13,wiz14];
+
+/* ---- 產出 ---- */
+function wTabSet(t){ wizTab = t; renderWizard(); }
+function wOutText(){ return wizTab === 'gpt' ? buildPersonaPrompt() : buildPersonaCard(); }
+function wCopyOut(){ doCopy(wOutText()); }
+function wSaveOut(){
+  const name = persona.nickname || '我的人設';
+  records.unshift({
+    id: uid(), type: 'persona',
+    title: (wizTab === 'gpt' ? '人設指令｜' : '人設卡｜') + name,
+    topic: name, content: wOutText(),
+    pLabel: personaName(persona),
+    tags: [], note: '', fav: false,
+    createdAt: Date.now(), updatedAt: Date.now()
+  });
+  save(); renderList(); renderDash();
+  toast('已存進指令庫 ✓');
+}
+
+function buildPersonaPrompt(){
+  return [
+    roleBlock(),
+    bgBlock(),
+    exBlock(),
+    '【使用規則】\n' + [
+      '1. 從現在開始，這個對話裡我請你寫的所有文案、腳本、貼文、回覆，都要遵守上面的角色與背景，不要自己發明新的語氣或設定。',
+      '2. 每次動筆前，先確認我要哪一種格式（IG 貼文、限時動態、Reels 腳本、海報文案、客戶回覆⋯⋯）。',
+      '3. 絕對不要使用【背景】裡「絕對不要出現的語氣」清單裡的說法。',
+      '4. 全程用台灣人日常會說的繁體中文，不要出現簡體字與中國用語。',
+      (exBlock() ? '5. 寫完自己檢查一次：這段話像不像【範例】裡那個人寫的？太通用、太有 AI 味就重寫。'
+                 : '5. 寫完自己檢查一次：有沒有太通用、太有 AI 味？有的話就照【背景】裡我的個性與說話節奏重寫。'),
+      '6. 我給的資訊不夠就直接問我，不要自己編故事或編數字。'
+    ].join('\n'),
+    '記住了就回我「準備好了」，然後等我告訴你今天要做什麼。'
+  ].filter(Boolean).join('\n\n');
+}
+
+function buildPersonaCard(){
+  const p = persona;
+  const g = a => (a||[]).join('、') || '—';
+  const L = [];
+  L.push('〔人設卡｜' + (p.label || p.nickname || '未命名') + '〕');
+  L.push('');
+  L.push('【角色】' + (tx(p.aiRole) || suggestRole()));
+  L.push('');
+  L.push('帳號：' + (p.handle || '—'));
+  L.push('定位：' + (p.positioning || '—'));
+  L.push('專業：' + (tx(p.expertise) || '—'));
+  L.push('產業：' + (p.industry || '—'));
+  L.push('');
+  L.push('特質：' + [g(p.commStyle), g(p.contentEnergy), g(p.interactStyle)].filter(x => x !== '—').join(' ／ '));
+  if(p.customTraits) L.push('補充：' + p.customTraits);
+  L.push('語氣：' + (p.toneRhythm || '—'));
+  L.push('避免：' + g(p.bannedTone));
+  if(p.pastFail) L.push('踩過的雷：' + tx(p.pastFail));
+  L.push('');
+  L.push('受眾：' + (p.ageRange || '—') + '｜' + g(p.audienceType) + (p.audienceOther ? '、' + p.audienceOther : ''));
+  if(p.painPoint) L.push('困擾：' + p.painPoint);
+  if(p.desiredChange) L.push('渴望的改變：' + p.desiredChange);
+  L.push('');
+  const story = [p.storyBefore, p.storyTurning, p.storyResult].filter(Boolean);
+  L.push('故事：' + (story.length ? story.map(tx).join(' → ') : '—'));
+  if(p.strengths) L.push('優點：' + tx(p.strengths));
+  if(p.weaknesses) L.push('缺點：' + tx(p.weaknesses));
+  L.push('');
+  const off = (p.offers||[]).filter(o => o.name || o.desc);
+  L.push('服務：' + (off.length ? off.map(o => (o.name || '（未命名）') + (o.desc ? '（' + o.desc + '）' : '')).join('、') : '—'));
+  L.push('目標行動：' + g(p.readerAction) + (p.readerActionOther ? '、' + p.readerActionOther : ''));
+  L.push('預約動線：' + (p.booking || '—'));
+  if(p.keywords) L.push('關鍵詞：' + tx(p.keywords));
+  const qa = (p.qa||[]).filter(x => (x.q||'').trim());
+  if(qa.length){
+    L.push('');
+    L.push('客戶常問：');
+    qa.forEach((x, i) => L.push('  Q' + (i+1) + '　' + x.q.trim()));
+  }
+  if(p.bestLine || p.worstLine){
+    L.push('');
+    if(p.bestLine) L.push('流量最好：' + tx(p.bestLine) + (p.bestData ? '（' + tx(p.bestData) + '）' : ''));
+    if(p.worstLine) L.push('流量最差：' + tx(p.worstLine));
+  }
+  const ex = (p.examples||[]).filter(x => (x.text||'').trim());
+  if(ex.length){
+    L.push('');
+    L.push('我喜歡的句子：');
+    ex.forEach(x => L.push('  ・' + tx(x.text)));
+  }
+  return L.join('\n');
+}
+
+/* ---- 繪製 ---- */
+function renderWizard(){
+  const seq = wizSeq();
+  if(seq.indexOf(persona.step) < 0){
+    const back = seq.filter(x => x <= persona.step);
+    persona.step = back.length ? back[back.length - 1] : 0;
+  }
+  /* 進度存著，但沒按過「開始打底」之前一律顯示首頁 */
+  const shown = wizEntered ? persona.step : 0;
+
+  const root = document.getElementById('wizRoot');
+  root.innerHTML = WIZ_BODY[shown]();
+  root.classList.remove('wiz-card');
+  void root.offsetWidth;
+  root.classList.add('wiz-card');
+
+  const vi = seq.indexOf(shown), total = seq.length - 1;
+  const pct = shown === 0 ? 0 : Math.round(vi / total * 100);
+  document.getElementById('wizFill').style.width = pct + '%';
+  document.getElementById('wizL').textContent = WIZ_LABEL[shown];
+  document.getElementById('wizR').textContent = pct + '%';
+  document.getElementById('wizTag').textContent = shown === 0 ? '開始' : ('STEP ' + vi + ' / ' + total);
+  renderPersonaBar();
+}
+function renderPersona(){ renderWizard(); }
+
+/* ==================================================================
+   人設檔案管理：切換、新增、更名、複製、刪除
+   ================================================================== */
+function refreshPersonaUI(){
+  /* 換了人設（切換／新增／複製／刪除／匯入／清空）就回到該組的首頁，
+     不要直接跳進別組人設填到一半的第 N 步 */
+  wizEntered = false;
+  renderPersonaBar();
+  renderGenBar();
+  renderWizard();
+  renderGen();
+  renderDash();
+}
+
+function switchPersona(id){
+  const p = pList.find(x => x.id === id);
+  if(!p || id === pActive) return;
+  pActive = id; persona = p; save();
+  refreshPersonaUI();
+  toast('已切換到「' + personaName(p) + '」，後面所有指令都會用這組');
+}
+
+function addPersona(){
+  askText('這組新人設要叫什麼名字？',
+    '<p>取一個你自己認得出來的名字，之後切換人設時看的就是這個。</p>' +
+    '<p style="margin-top:10px;color:var(--gray);font-size:13px">例：美業帳號、療癒帳號、學生示範用</p>', ''
+  ).then(n => {
+    if(n === null) return;
+    const p = newPersona((n || '').trim());
+    pList.push(p); pActive = p.id; persona = p; save();
+    go('persona');
+    refreshPersonaUI();
+    toast('新人設已建立，從第一關開始填');
+  });
+}
+
+function renamePersona(){
+  askText('這組人設要叫什麼名字？',
+    '<p>改的只是顯示用的名字，裡面填過的內容不會動到。</p>', personaName(persona)
+  ).then(n => {
+    if(n === null) return;
+    persona.label = (n || '').trim();
+    save(); renderPersonaBar(); renderGenBar(); renderDash();
+    toast('已更名');
+  });
+}
+
+function dupPersona(){
+  const c = fillPersona(JSON.parse(JSON.stringify(persona)));
+  c.id = pid();
+  c.label = personaName(persona) + '（副本）';
+  c.createdAt = Date.now();
+  pList.push(c); pActive = c.id; persona = c; save();
+  refreshPersonaUI();
+  toast('已複製一份，可以直接在這份上面改');
+}
+
+function delPersona(){
+  if(pList.length <= 1){ toast('至少要留一組人設'); return; }
+  askChoice('確定要刪除這組人設嗎？',
+    '<p>要刪除的是「<b>' + esc(personaName(persona)) + '</b>」。</p>' +
+    '<p style="margin-top:10px">刪除後會放進<b style="color:var(--orange)">最近刪除</b>，' +
+    '<b>30 天內</b>可以到儀表板救回來。已存進指令庫的指令不受影響。</p>',
+    [{label:'取消', value:0}, {label:'確定刪除', value:1, cls:'danger'}]
+  ).then(ok => {
+    if(!ok){ toast('已取消，你的資料沒有被動到'); return; }
+    const i = pList.findIndex(x => x.id === pActive);
+    trashPush('persona', personaName(persona), pList[i]);
+    pList.splice(i, 1);
+    persona = pList[Math.max(0, i - 1)];
+    pActive = persona.id;
+    save();
+    refreshPersonaUI(); renderDash();
+    toast('已移到最近刪除，30 天內可還原。目前使用「' + personaName(persona) + '」');
+  });
+}
+
+/* ---- 人設頁上方：所有檔案一字排開 ---- */
+function renderPersonaBar(){
+  const el = document.getElementById('personaBar');
+  if(!el) return;
+  const chips = pList.map(p =>
+    '<button class="pchip' + (p.id === pActive ? ' on' : '') + '" onclick="switchPersona(\'' + esc(p.id) + '\')">' +
+      '<b>' + esc(personaName(p)) + '</b><span>' + scoreOf(p) + '%</span>' +
+    '</button>').join('');
+  el.innerHTML =
+    '<div class="pbar-h"><span>人設檔案</span>' +
+      '<span class="pbar-n">共 ' + pList.length + ' 組，使用中的是「' + esc(personaName(persona)) + '」；點一下就能切換</span></div>' +
+    '<div class="pchips">' + chips +
+      '<button class="pchip add" onclick="addPersona()">＋ 新增人設</button></div>' +
+    '<div class="row" style="margin-top:11px">' +
+      '<button class="btn ghost sm" onclick="renamePersona()">重新命名</button>' +
+      '<button class="btn ghost sm" onclick="dupPersona()">複製一份</button>' +
+      (pList.length > 1 ? '<button class="btn danger sm" onclick="delPersona()">刪除這組</button>' : '') +
+    '</div>';
+}
+
+/* ---- 產生器頁上方：固定顯示現在套用哪一組 ---- */
+function renderGenBar(){
+  const el = document.getElementById('genPersonaBar');
+  if(!el) return;
+  const opts = pList.map(p =>
+    '<option value="' + esc(p.id) + '"' + (p.id === pActive ? ' selected' : '') + '>' +
+    esc(personaName(p)) + '（' + scoreOf(p) + '%）</option>').join('');
+  el.innerHTML =
+    '<div class="gbar">' +
+      '<span class="gbar-k">◈ 目前套用的人設</span>' +
+      '<select class="inp gbar-sel" onchange="switchPersona(this.value)">' + opts + '</select>' +
+      '<button class="btn ghost sm" onclick="go(\'persona\')">編輯這組</button>' +
+      '<button class="btn ghost sm" onclick="addPersona()">＋ 新增</button>' +
+    '</div>';
+}
+
+/* ==================================================================
+   指令產生器
+   ================================================================== */
+function renderGenTabs(){
+  document.getElementById('genTabs').innerHTML = TYPE_KEYS.map(k => {
+    const t = TYPES[k];
+    return '<button class="tab' + (k === curType ? ' on' : '') + '" onclick="pickType(\'' + k + '\')">' +
+      '<em>' + t.icon + '</em><b>' + t.name + '</b><span>第 ' + (TYPE_KEYS.indexOf(k)+1) + ' 種指令</span></button>';
+  }).join('');
+}
+function pickType(k){ curType = k; genStep = 0; renderGen(); }
+
+function renderGen(){
+  renderGenBar();
+  renderGenTabs();
+  const t = TYPES[curType];
+  document.getElementById('genTitle').textContent = t.icon + ' ' + t.name + '指令';
+  document.getElementById('genDesc').textContent = t.desc;
+
+  const sc = personaScore();
+  document.getElementById('personaWarn').innerHTML = sc < 60
+    ? '<div class="warn" style="margin-bottom:20px"><span>⚠️</span><div><b>「' + esc(personaName(persona)) + '」目前只填了 ' + sc + '%。</b>' +
+      '現在就算產生指令，AI 也不認識你，出來的東西會很通用。' +
+      '<button class="btn sm" style="margin-left:8px" onclick="go(\'persona\')">先去填人設</button></div></div>'
+    : '';
+
+  genState[gkey()] = genState[gkey()] || {};
+  const s = genState[gkey()];
+
+  document.getElementById('genFields').innerHTML = t.fields.filter(f => !f.showIf || f.showIf(s)).map(f => {
+    let inner = '';
+    if(f.t === 'chips'){
+      const opts = (typeof f.opts === 'function') ? f.opts(s) : f.opts;
+      inner = '<div class="chips">' + opts.map(o =>
+        '<button class="chip' + (s[f.k] === o ? ' on' : '') + '" onclick="setGen(\'' + f.k + '\',' + esc(JSON.stringify(o)) + ')">' + esc(o) + '</button>'
+      ).join('') + '</div>';
+    } else if(f.t === 'area'){
+      inner = '<textarea class="inp" oninput="setGen(\'' + f.k + '\',this.value,1)" placeholder="' + esc(f.ph||'') + '">' + esc(s[f.k]||'') + '</textarea>';
+    } else {
+      inner = '<input class="inp" value="' + esc(s[f.k]||'') + '" oninput="setGen(\'' + f.k + '\',this.value,1)" placeholder="' + esc(f.ph||'') + '">';
+    }
+    return '<div class="field"><label>' + f.label + (f.req ? ' <span style="color:var(--orange)">＊</span>' : '') + '</label>' +
+      (f.hint ? '<div class="hint">' + f.hint + '</div>' : '') + inner + '</div>';
+  }).join('');
+
+  renderOut();
+}
+function setGen(k, val, keep){
+  genState[gkey()] = genState[gkey()] || {};
+  genState[gkey()][k] = val;
+  save();
+  if(keep) renderOut(); else renderGen();
+}
+function clearGen(){ genState[gkey()] = {}; save(); renderGen(); toast('已清空'); }
+
+/* 有些指令是分步驟的（例如簡報要先做大綱、上傳附件後再整合），
+   BUILD 回傳陣列時就會在輸出區長出步驟頁籤 */
+let genStep = 0;
+
+function currentSteps(){
+  const out = BUILD[curType]();
+  if(Array.isArray(out)) return out;
+  if(out && typeof out === 'object') return [{label: out.label || '', note: out.note || '', text: out.text}];
+  return [{label:'', note:'', text:out}];
+}
+function currentStep(){
+  const s = currentSteps();
+  if(genStep >= s.length) genStep = 0;
+  return s[genStep];
+}
+function currentOut(){ return currentStep().text; }
+function setGenStep(i){ genStep = i; renderOut(); }
+
+function renderOut(){
+  const steps = currentSteps();
+  if(genStep >= steps.length) genStep = 0;
+  const cur = steps[genStep];
+
+  const head = document.getElementById('genSteps');
+  const tabs = steps.length > 1
+    ? '<div class="otabs">' + steps.map((s, i) =>
+        '<button class="otab' + (i === genStep ? ' on' : '') + '" onclick="setGenStep(' + i + ')">' +
+        esc(s.label) + '</button>').join('') + '</div>'
+    : '';
+  const note = cur.note
+    ? '<div class="warn hot" style="margin-bottom:12px"><div>' + cur.note + '</div></div>'
+    : '';
+  head.innerHTML = tabs + note;
+
+  document.getElementById('genOut').textContent = cur.text;
+  document.getElementById('genCount').textContent =
+    cur.text.length + ' 字' + (steps.length > 1 ? '　·　共 ' + steps.length + ' 步' : '');
+}
+
+function doCopy(txt, msg){
+  const done = () => toast(msg || '已複製，直接貼給 AI ✓');
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(txt).then(done).catch(()=>fallback());
+  } else fallback();
+  function fallback(){
+    const ta = document.createElement('textarea');
+    ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); done(); }
+    catch(e){ toast('複製失敗，請長按選取文字複製'); }
+    document.body.removeChild(ta);
+  }
+}
+function copyOut(){ doCopy(currentOut()); }
+
+function saveOut(){
+  const s = genState[gkey()] || {};
+  /* 乾貨型、一張圖裂變都是「還沒有主題」才用的，沒填主題也要存得起來 */
+  const topic = (s.topic || s.gTopic || s.picWhat || s.what || s.goal || s.ptype || s.span ||
+                 (isGanhuo(s) ? '乾貨型・待訪談' : '') ||
+                 (isSplit(s) ? '一張圖裂變' : '')).trim();
+  if(!topic){ toast('至少先填一個主題再存喔'); return; }
+  const st = currentStep();
+  const rec = {
+    id: uid(), type: curType,
+    title: TYPES[curType].name + '｜' + topic + (st.label ? '（' + st.label + '）' : ''),
+    topic: topic,
+    content: currentOut(),
+    pLabel: personaName(persona),
+    tags: [], note: '', fav: false,
+    createdAt: Date.now(), updatedAt: Date.now()
+  };
+  records.unshift(rec); save();
+  toast('已存進指令庫 ✓');
+  renderDash();
+}
+
+/* ==================================================================
+   指令庫
+   ================================================================== */
+function itemHTML(r, mini){
+  const t = REC_TYPES[r.type] || {name:'其他', cls:'', icon:'📄'};
+  const acts = mini ? '' :
+    '<div class="acts">' +
+      '<button class="btn sm" onclick="copyRec(\'' + esc(r.id) + '\')">複製指令</button>' +
+      '<button class="btn ghost sm" onclick="viewRec(\'' + esc(r.id) + '\')">檢視全文</button>' +
+      '<button class="btn ghost sm" onclick="openForm(\'' + esc(r.id) + '\')">編輯</button>' +
+      '<button class="btn danger sm" onclick="delRec(\'' + esc(r.id) + '\')">刪除</button>' +
+    '</div>';
+  return '<div class="item">' +
+    '<div class="item-top">' +
+      '<div style="min-width:0"><h4>' + esc(r.title) + '</h4>' +
+        '<div class="snip">' + esc((r.content||'').replace(/\n+/g,' ').slice(0,120)) + '</div></div>' +
+      '<button class="star' + (r.fav ? ' on' : '') + '" onclick="toggleFav(\'' + esc(r.id) + '\')">' + (r.fav ? '★' : '☆') + '</button>' +
+    '</div>' +
+    '<div class="meta">' +
+      '<span class="badge ' + t.cls + '">' + t.icon + ' ' + t.name + '</span>' +
+      (r.pLabel ? '<span class="tag">◈ ' + esc(r.pLabel) + '</span>' : '') +
+      (r.tags||[]).map(x => '<span class="tag">#' + esc(x) + '</span>').join('') +
+      (r.note ? '<span class="tag">📝 有備註</span>' : '') +
+      '<span class="date">' + fmtDate(r.createdAt) + '</span>' +
+    '</div>' + acts + '</div>';
+}
+
+function renderList(){
+  const q = (document.getElementById('q').value || '').trim().toLowerCase();
+  const ft = document.getElementById('fType').value;
+  const ff = document.getElementById('fFav').value;
+  const so = document.getElementById('fSort').value;
+
+  let out = records.filter(r => {
+    if(ft && r.type !== ft) return false;
+    if(ff === '1' && !r.fav) return false;
+    if(!q) return true;
+    const hay = [r.title, r.topic, r.content, r.note, (r.tags||[]).join(' ')].join(' ').toLowerCase();
+    return hay.indexOf(q) > -1;
+  });
+
+  if(so === 'old') out.sort((a,b) => a.createdAt - b.createdAt);
+  else if(so === 'az') out.sort((a,b) => a.title.localeCompare(b.title,'zh-Hant'));
+  else out.sort((a,b) => b.createdAt - a.createdAt);
+
+  document.getElementById('listSub').textContent =
+    '共 ' + records.length + ' 筆，目前顯示 ' + out.length + ' 筆';
+
+  document.getElementById('listBox').innerHTML = out.length
+    ? out.map(r => itemHTML(r)).join('')
+    : '<div class="card empty"><em>◍</em><p>' +
+      (records.length ? '沒有符合條件的指令，換個關鍵字試試' : '指令庫還是空的') +
+      '</p><button class="btn" onclick="go(\'gen\')">去產生指令</button></div>';
+}
+
+function toggleFav(id){
+  const r = records.find(x => x.id === id);
+  if(!r) return;
+  r.fav = !r.fav; r.updatedAt = Date.now(); save();
+  renderList(); renderDash();
+  toast(r.fav ? '已加入收藏 ★' : '已取消收藏');
+}
+function copyRec(id){
+  const r = records.find(x => x.id === id);
+  if(r) doCopy(r.content);
+}
+function delRec(id){
+  const r = records.find(x => x.id === id);
+  if(!r) return;
+  askChoice('確定要刪除嗎？',
+    '<p>要刪除的是「<b>' + esc(r.title) + '</b>」。</p>' +
+    '<p style="margin-top:10px">刪除後會放進<b style="color:var(--orange)">最近刪除</b>，' +
+    '<b>30 天內</b>可以到儀表板救回來。</p>',
+    [{label:'取消', value:0}, {label:'確定刪除', value:1, cls:'danger'}]
+  ).then(ok => {
+    if(!ok){ toast('已取消，你的資料沒有被動到'); return; }
+    trashPush('rec', r.title || '未命名指令', r);
+    records = records.filter(x => x.id !== id); save();
+    renderList(); renderDash(); toast('已移到最近刪除，30 天內可還原');
+  });
+}
+
+/* ---- 檢視 ---- */
+function viewRec(id){
+  const r = records.find(x => x.id === id);
+  if(!r) return;
+  document.getElementById('vTitle').textContent = r.title;
+  document.getElementById('vBody').textContent = r.content;
+  document.getElementById('vNote').innerHTML = r.note
+    ? '<div class="warn" style="margin-top:14px"><span>📝</span><div>' + esc(r.note) + '</div></div>' : '';
+  document.getElementById('vCopy').onclick = () => doCopy(r.content);
+  document.getElementById('viewMask').classList.add('on');
+}
+function closeView(){ document.getElementById('viewMask').classList.remove('on'); }
+
+/* ---- 新增／編輯 ---- */
+function openForm(id){
+  editId = id || null;
+  const r = id ? records.find(x => x.id === id) : null;
+  document.getElementById('mTitle').textContent = r ? '編輯指令' : '手動新增指令';
+  document.getElementById('m-title').value = r ? r.title : '';
+  document.getElementById('m-type').value = r ? r.type : curType;
+  document.getElementById('m-topic').value = r ? (r.topic||'') : '';
+  document.getElementById('m-content').value = r ? r.content : '';
+  document.getElementById('m-tags').value = r ? (r.tags||[]).join(', ') : '';
+  document.getElementById('m-note').value = r ? (r.note||'') : '';
+  formFav = r ? !!r.fav : false;
+  paintFormFav();
+  document.getElementById('mask').classList.add('on');
+}
+function closeForm(){ document.getElementById('mask').classList.remove('on'); editId = null; }
+function toggleFormFav(){ formFav = !formFav; paintFormFav(); }
+function paintFormFav(){
+  const b = document.getElementById('m-fav');
+  b.className = 'chip' + (formFav ? ' on' : '');
+  b.textContent = formFav ? '★ 已收藏' : '☆ 加入收藏';
+}
+function saveForm(){
+  const title = document.getElementById('m-title').value.trim();
+  const content = document.getElementById('m-content').value.trim();
+  if(!title){ toast('標題還沒填'); return; }
+  if(!content){ toast('指令內容還沒填'); return; }
+  const data = {
+    title: title,
+    type: document.getElementById('m-type').value,
+    topic: document.getElementById('m-topic').value.trim(),
+    content: content,
+    tags: document.getElementById('m-tags').value.split(/[,，]/).map(s => s.trim()).filter(Boolean),
+    note: document.getElementById('m-note').value.trim(),
+    fav: formFav,
+    updatedAt: Date.now()
+  };
+  if(editId){
+    const r = records.find(x => x.id === editId);
+    Object.assign(r, data);
+    toast('已更新 ✓');
+  } else {
+    records.unshift(Object.assign({id:uid(), createdAt:Date.now()}, data));
+    toast('已新增 ✓');
+  }
+  save(); closeForm(); renderList(); renderDash();
+}
+
+/* ==================================================================
+   匯出／匯入
+   ================================================================== */
+/* ---- 三選一對話框 ----
+   原生 confirm 只有兩顆按鈕，逼得「取消」要兼差當「覆蓋」，很容易誤刪。
+   這裡用現成的 modal 樣式做一個可以有第三個選項的版本。 */
+function askChoice(title, bodyHTML, choices){
+  return new Promise(resolve => {
+    const mask = document.createElement('div');
+    mask.className = 'mask on';
+    mask.innerHTML =
+      '<div class="modal" style="max-width:520px">' +
+        '<div class="modal-h"><b>' + esc(title) + '</b><button class="x" data-close="1">×</button></div>' +
+        '<div class="modal-b">' + bodyHTML + '</div>' +
+        '<div class="modal-f" style="flex-wrap:wrap">' +
+          choices.map((c, i) => '<button class="btn ' + (c.cls === undefined ? 'ghost' : c.cls) +
+            '" data-i="' + i + '">' + esc(c.label) + '</button>').join('') +
+        '</div>' +
+      '</div>';
+    function close(v){
+      document.removeEventListener('keydown', onKey);
+      if(mask.parentNode) mask.parentNode.removeChild(mask);
+      resolve(v);
+    }
+    function onKey(ev){ if(ev.key === 'Escape') close(null); }
+    mask.addEventListener('click', ev => {
+      if(ev.target === mask || ev.target.getAttribute('data-close')) return close(null);
+      const b = ev.target.closest('button[data-i]');
+      if(b) close(choices[Number(b.getAttribute('data-i'))].value);
+    });
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(mask);
+  });
+}
+
+/* 只有一顆按鈕的提示視窗，用來取代瀏覽器內建的 alert。
+   出錯的時候一定要讓使用者看到訊息，不能靜悄悄什麼都沒有。 */
+function askOK(title, bodyHTML){
+  return askChoice(title, bodyHTML, [{label:'我知道了', value:1, cls:''}]);
+}
+
+/* 取名字用的輸入視窗。跟 askChoice 一樣是自己畫的，
+   所以嵌在別的網頁裡、或用 LINE／IG 內建瀏覽器開，都一定會出現。
+   取消回傳 null，跟原本的 prompt 行為一致。 */
+function askText(title, bodyHTML, defVal){
+  return new Promise(resolve => {
+    const mask = document.createElement('div');
+    mask.className = 'mask on';
+    mask.innerHTML =
+      '<div class="modal" style="max-width:480px">' +
+        '<div class="modal-h"><b>' + esc(title) + '</b><button class="x" data-close="1">×</button></div>' +
+        '<div class="modal-b">' + bodyHTML +
+          '<input class="inp" id="askTextIn" style="margin-top:12px" value="' + esc(defVal || '') + '">' +
+        '</div>' +
+        '<div class="modal-f" style="flex-wrap:wrap">' +
+          '<button class="btn ghost" data-v="0">取消</button>' +
+          '<button class="btn" data-v="1">確定</button>' +
+        '</div>' +
+      '</div>';
+    function close(v){
+      document.removeEventListener('keydown', onKey);
+      if(mask.parentNode) mask.parentNode.removeChild(mask);
+      resolve(v);
+    }
+    function submit(){
+      const el = document.getElementById('askTextIn');
+      close(el ? el.value : '');
+    }
+    function onKey(ev){
+      if(ev.key === 'Escape') close(null);
+      if(ev.key === 'Enter')  submit();
+    }
+    mask.addEventListener('click', ev => {
+      if(ev.target === mask || ev.target.getAttribute('data-close')) return close(null);
+      const b = ev.target.closest('button[data-v]');
+      if(!b) return;
+      if(b.getAttribute('data-v') === '1') submit(); else close(null);
+    });
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(mask);
+    const el = document.getElementById('askTextIn');
+    if(el){ el.focus(); el.select(); }
+  });
+}
+
+/* ---- 匯入把關 ----
+   備份檔可能是舊版本、被手動改壞、或根本不是這個工具匯出的。
+   照單全收有兩個下場：畫面直接壞掉（例如 tags 不是陣列，.map 就炸了），
+   或是檔案裡藏的 HTML 被當成程式跑。所以一律照 DEF_PERSONA 的形狀重洗一次。 */
+const ID_OK = /^[A-Za-z0-9_-]{1,40}$/;
+function safeId(v, mk){ return (typeof v === 'string' && ID_OK.test(v)) ? v : mk(); }
+function sTxt(v, max){ return typeof v === 'string' ? v.slice(0, max || 4000) : ''; }
+function sNum(v){ return (typeof v === 'number' && isFinite(v) && v > 0) ? v : Date.now(); }
+function sList(v, max){
+  return Array.isArray(v) ? v.filter(x => typeof x === 'string').slice(0, max || 40).map(x => x.slice(0, 200)) : [];
+}
+function sPairs(v, keys, max){
+  return Array.isArray(v)
+    ? v.filter(o => o && typeof o === 'object' && !Array.isArray(o)).slice(0, max || 30)
+       .map(o => { const r = {}; keys.forEach(k => r[k] = sTxt(o[k], 2000)); return r; })
+    : [];
+}
+function cleanPersona(x){
+  if(!x || typeof x !== 'object' || Array.isArray(x)) return null;
+  const p = JSON.parse(JSON.stringify(DEF_PERSONA));
+  Object.keys(DEF_PERSONA).forEach(k => {
+    const d = DEF_PERSONA[k];
+    if(typeof d === 'string')       p[k] = sTxt(x[k]);
+    else if(typeof d === 'boolean') p[k] = x[k] === true;
+    else if(typeof d === 'number')  p[k] = (typeof x[k] === 'number' && isFinite(x[k])) ? x[k] : d;
+    else if(Array.isArray(d))       p[k] = sList(x[k]);
+  });
+  p.offers   = sPairs(x.offers,   ['name','desc']);
+  p.qa       = sPairs(x.qa,       ['q','a']);
+  p.examples = sPairs(x.examples, ['note','text']);
+  if(!p.offers.length)   p.offers   = [{name:'',desc:''}];
+  if(!p.qa.length)       p.qa       = [{q:'',a:''}];
+  if(!p.examples.length) p.examples = [{note:'',text:''}];
+  p.id = safeId(x.id, pid);
+  p.label = sTxt(x.label, 60);
+  p.createdAt = sNum(x.createdAt);
+  /* 最後編輯時間。不能用 sNum()——它在沒有值的時候會回 Date.now()，
+     那樣舊備份匯進來會被當成最新的。沒有就是 0。 */
+  p.updatedAt = (typeof x.updatedAt === 'number' && isFinite(x.updatedAt) && x.updatedAt > 0) ? x.updatedAt : 0;
+  if(x.schemaV === 2) p.schemaV = 2;   /* 舊備份沒這欄，留給 migratePersona 轉關卡 */
+  return p;
+}
+function cleanRecord(r){
+  if(!r || typeof r !== 'object' || Array.isArray(r)) return null;
+  const content = sTxt(r.content, 20000), title = sTxt(r.title, 300);
+  if(!content && !title) return null;
+  return {
+    id: safeId(r.id, uid),
+    type: REC_TYPES[r.type] ? r.type : 'poster',
+    title: title || '（沒有標題的指令）',
+    topic: sTxt(r.topic, 300),
+    content: content,
+    pLabel: sTxt(r.pLabel, 60),
+    tags: sList(r.tags, 20),
+    note: sTxt(r.note, 2000),
+    fav: r.fav === true,
+    createdAt: sNum(r.createdAt),
+    updatedAt: sNum(r.updatedAt)
+  };
+}
+
+function readBackup(txt){
+  let d = null;
+  try{ d = JSON.parse(txt); }catch(err){ d = null; }
+  if(!d || typeof d !== 'object'){
+    askOK('這個檔案讀不到',
+      '<p>請確認你選的是本工具「匯出備份」下載的那個 <b>.json</b> 檔。</p>');
+    return;
+  }
+  const rawR = Array.isArray(d.records) ? d.records : [];
+  const rawP = (d.personas && Array.isArray(d.personas.list) && d.personas.list.length)
+    ? d.personas.list : (d.persona ? [d.persona] : []);
+  const recs = rawR.map(cleanRecord).filter(Boolean);
+  const ps   = rawP.map(cleanPersona).filter(Boolean);
+  const dropped = (rawR.length - recs.length) + (rawP.length - ps.length);
+
+  if(!recs.length && !ps.length){
+    askOK('這個檔案裡沒有可以匯入的內容',
+      '<p>裡面找不到指令或人設。</p>' +
+      '<p style="margin-top:10px">請確認你選的是本工具「匯出備份」下載的那個 <b>.json</b> 檔。</p>');
+    return;
+  }
+
+  const body =
+    '<p>這個備份檔裡有 <b>' + recs.length + '</b> 筆指令、<b>' + ps.length + '</b> 組人設。</p>' +
+    (dropped ? '<div class="hint" style="margin-top:10px">有 ' + dropped + ' 筆資料格式不對，已經自動略過。</div>' : '') +
+    '<p style="margin-top:14px"><b>合併</b>　保留你現在的資料，只補上備份檔裡多出來的。</p>' +
+    '<p style="margin-top:8px"><b>覆蓋</b>　清掉你現在的全部資料，完全換成備份檔的內容。</p>';
+
+  askChoice('要怎麼匯入？', body, [
+    {label:'先不要匯入', value:'cancel'},
+    {label:'合併', value:'merge', cls:''},
+    {label:'覆蓋', value:'over', cls:'danger'}
+  ]).then(mode => {
+    if(mode === 'merge'){ doImport(d, recs, ps, 'merge'); return; }
+    if(mode === 'over'){
+      askChoice('確定要覆蓋嗎？',
+        '<p>你現在有 <b>' + records.length + '</b> 筆指令、<b>' + pList.length + '</b> 組人設，' +
+        '<b style="color:var(--orange)">覆蓋之後就救不回來了</b>。</p>' +
+        '<p style="margin-top:10px">如果還沒備份過現在的資料，先按「算了」，去匯出一份再回來。</p>',
+        [{label:'算了，先不要', value:0}, {label:'我確定，覆蓋', value:1, cls:'danger'}]
+      ).then(ok => {
+        if(ok) doImport(d, recs, ps, 'over');
+        else toast('已取消，你的資料沒有被動到');
+      });
+      return;
+    }
+    toast('已取消，你的資料沒有被動到');
+  });
+}
+
+function doImport(d, recs, ps, mode){
+  /* 換裝置就是靠匯入。全新的裝置一開起來就有一組空白人設，
+     合併之後如果還停在那組空白上，使用者會以為「匯入失敗」——東西其實都進來了。
+     所以先記住這台是不是全新的，合併完把那組空白收掉、跳到匯入進來的人設。 */
+  const pristine = pList.length === 1 && scoreOf(pList[0]) === 0 && !records.length;
+  const blankId = pristine ? pList[0].id : null;
+
+  if(mode === 'merge'){
+    const have = new Set(records.map(r => r.id));
+    let add = 0;
+    recs.forEach(r => { if(have.has(r.id)) return; records.push(r); have.add(r.id); add++; });
+    records.sort((a, b) => b.createdAt - a.createdAt);
+    const haveP = new Set(pList.map(x => x.id));
+    let padd = 0;
+    ps.forEach(x => { if(haveP.has(x.id)) return; pList.push(x); haveP.add(x.id); padd++; });
+    toast('已合併，新增 ' + add + ' 筆指令、' + padd + ' 組人設 ✓');
+  } else {
+    records = recs;
+    if(ps.length){
+      pList = ps;
+      const want = d.personas && d.personas.activeId;
+      pActive = pList.some(x => x.id === want) ? want : pList[0].id;
+      persona = pList.find(x => x.id === pActive);
+    }
+    genState = {};   /* 舊人設的草稿留著也沒用了 */
+    toast('已覆蓋匯入 ✓');
+  }
+
+  if(blankId && pList.length > 1){
+    /* 把那組沒填過的空白人設收掉，跳到備份檔裡最近編輯過的那一組 */
+    const rest = pList.filter(p => p.id !== blankId);
+    const want = d.personas && d.personas.activeId;
+    const pick = rest.find(p => p.id === want) ||
+                 rest.slice().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))[0];
+    pList = rest; pActive = pick.id; persona = pick;
+    toast('已匯入，現在用的是「' + personaName(persona) + '」✓');
+  }
+
+  migratePersona();
+  save(); refreshPersonaUI(); renderList();
+}
+function exportData(){
+  const blob = new Blob([JSON.stringify({
+    app:'ai-prompt-studio', version:2, exportedAt:new Date().toISOString(),
+    personas:{list: pList, activeId: pActive}, records: records
+  }, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date(); const p = n => String(n).padStart(2,'0');
+  a.href = url;
+  a.download = 'AI指令小幫手備份_' + d.getFullYear() + p(d.getMonth()+1) + p(d.getDate()) + '.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  toast('備份已下載，記得存到雲端硬碟 ✓');
+}
+function importPick(){ document.getElementById('fileIn').click(); }
+document.getElementById('fileIn').onchange = function(e){
+  const f = e.target.files[0];
+  if(!f) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    try{ readBackup(fr.result); }
+    catch(err){ askOK('匯入的時候出了問題', '<p>你原本的資料<b>沒有被動到</b>，可以重新試一次。</p>'); }
+    e.target.value = '';
+  };
+  fr.readAsText(f);
+};
+
+/* ==================================================================
+   啟動
+   ================================================================== */
+(function init(){
+  migratePersona();
+  const opts = Object.keys(REC_TYPES).map(k => '<option value="' + k + '">' + REC_TYPES[k].icon + ' ' + REC_TYPES[k].name + '</option>').join('');
+  document.getElementById('fType').innerHTML = '<option value="">全部類型</option>' + opts;
+  document.getElementById('m-type').innerHTML = opts;
+  renderPersonaBar();
+  renderPersona();
+  renderGen();
+  renderList();
+  renderDash();
+})();
+</script>
+</body>
+</html>
