@@ -31,6 +31,24 @@ a{color:inherit}
 
 /* ---------- Layout ---------- */
 .app{display:flex;min-height:100vh}
+
+/* 內建瀏覽器（LINE／IG／FB）提醒橫幅。
+   這些 App 的內建瀏覽器有自己獨立的儲存空間，在裡面填的東西
+   換到 Safari／Chrome 打開就不見了——使用者會以為產品壞掉。 */
+.iab{
+  position:fixed;top:0;left:0;right:0;z-index:80;
+  background:var(--orange);color:#fff;
+  padding:10px 14px;font-size:12.5px;line-height:1.6;
+  display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;
+  box-shadow:0 2px 10px rgba(62,52,44,.18);
+}
+.iab b{font-weight:700}
+.iab button{
+  background:#fff;color:var(--orange);border:0;border-radius:99px;
+  padding:5px 13px;font-size:12.5px;font-weight:700;cursor:pointer;flex-shrink:0;
+}
+body.has-iab .app{padding-top:52px}
+@media (max-width:760px){ body.has-iab .app{padding-top:74px} }
 .side{
   width:232px;flex:0 0 232px;background:var(--milk);
   border-right:1px solid var(--line);padding:26px 16px 30px;
@@ -331,6 +349,11 @@ select.inp{appearance:none;padding-right:34px}
 </style>
 </head>
 <body>
+<div class="iab" id="iabBar" style="display:none">
+  <span id="iabTxt"></span>
+  <button onclick="iabCopy()">複製網址</button>
+</div>
+
 <div class="app">
 
   <!-- ============ 側邊選單 ============ -->
@@ -410,7 +433,7 @@ select.inp{appearance:none;padding-right:34px}
 
       <div class="sec">
         <div class="h2">資料備份</div>
-        <div class="sub" style="margin-bottom:14px">你的人設和指令只存在這台裝置的這個瀏覽器裡，不會上傳到任何地方。換裝置、換瀏覽器、清除瀏覽器資料都會不見——要換裝置就從這裡匯出，到另一台匯入。</div>
+        <div class="sub" style="margin-bottom:14px">你的人設和指令只存在這台裝置的這個瀏覽器裡，不會上傳到任何地方。換裝置、換瀏覽器、清除瀏覽器資料都會不見——要換裝置就從這裡匯出，到另一台匯入。<br><b>注意：從 LINE、Instagram 裡面點開的內建瀏覽器，跟 Safari／Chrome 也算「不同的瀏覽器」，資料不互通。</b></div>
         <div class="row">
           <button class="btn ghost sm" onclick="exportData()">匯出備份</button>
           <button class="btn ghost sm" onclick="importPick()">匯入備份</button>
@@ -446,7 +469,7 @@ select.inp{appearance:none;padding-right:34px}
 
         <div class="wiz-card" id="wizRoot"></div>
 
-        <div class="wiz-foot">你的答案只留在這台裝置的這個瀏覽器裡，不會上傳到任何地方——換裝置、換瀏覽器或清除瀏覽器資料都會不見，填完記得匯出備份</div>
+        <div class="wiz-foot">你的答案只留在這台裝置的這個瀏覽器裡，不會上傳到任何地方——換裝置、換瀏覽器或清除瀏覽器資料都會不見，填完記得匯出備份。<b>從 LINE、Instagram 裡面點開的內建瀏覽器，跟 Safari／Chrome 也算不同的瀏覽器。</b></div>
       </div>
     </section>
 
@@ -970,6 +993,56 @@ const TYPES = {
 const TYPE_KEYS = Object.keys(TYPES);
 /* 指令庫還會存人設指令，所以徽章／篩選用的類型表比產生器多一個 */
 const REC_TYPES = Object.assign({}, TYPES, {persona:{name:'人設指令', icon:'◈', cls:'c'}});
+
+/* ==================================================================
+   內建瀏覽器提醒（LINE／IG／FB）
+   ------------------------------------------------------------------
+   真人測試發現的問題：使用者從 LINE 點連結進來、填完人設，
+   之後用 Safari 打開卻是空的。因為這兩個是各自獨立的儲存空間，
+   資料不會互通——這是本機儲存的正常行為，但使用者只會覺得壞了。
+   所以一進來就要講清楚，不能等他填完一小時才發現。
+   ================================================================== */
+function inAppName(){
+  const ua = navigator.userAgent || '';
+  if(/\bLine\//i.test(ua))                 return 'LINE';
+  if(/Instagram/i.test(ua))                 return 'Instagram';
+  if(/FBAN|FBAV|FB_IAB/i.test(ua))          return 'Facebook';
+  return '';
+}
+function iabCopy(){ doCopy(location.href, '網址已複製，貼到 Safari 或 Chrome 打開就可以了 ✓'); }
+
+(function iabInit(){
+  const app = inAppName();
+  if(!app) return;
+  const bar = document.getElementById('iabBar');
+  const txt = document.getElementById('iabTxt');
+  if(!bar || !txt) return;
+  txt.innerHTML = '你正在 <b>' + app + '</b> 的內建瀏覽器裡。' +
+                  '這裡填的資料<b>不會</b>出現在 Safari／Chrome，兩邊是分開的。';
+  bar.style.display = 'flex';
+  document.body.classList.add('has-iab');
+
+  /* 橫幅一行字容易被滑過去，所以第一次進來再用自己的視窗講一次。
+     講過就記著，不要每次開都擋人。 */
+  let told = false;
+  try{ told = localStorage.getItem('aips_iab_seen_v1') === '1'; }catch(e){}
+  if(told) return;
+  setTimeout(function(){
+    askChoice('先等一下，這個要先跟你說',
+      '<p>你是從 <b>' + app + '</b> 點進來的，現在用的是 ' + app + ' 的<b>內建瀏覽器</b>。</p>' +
+      '<p style="margin-top:10px">這個工具把資料存在<b>你打開它的那個瀏覽器裡</b>。' +
+      '所以在這裡填的人設和指令，<b style="color:var(--orange)">換去 Safari 或 Chrome 打開就會是空的</b>，兩邊不會互通。</p>' +
+      '<p style="margin-top:10px"><b>建議你現在就換過去再開始填</b>，不然填完一小時的東西，之後用手機瀏覽器打開會找不到。</p>' +
+      '<p style="margin-top:10px">怎麼換：點畫面右上角的 <b>⋯</b> 或 <b>↗</b>，選<b>「用其他瀏覽器開啟」</b>；' +
+      '或按下面的「複製網址」，自己貼到瀏覽器。</p>',
+      [{label:'複製網址', value:'copy', cls:''},
+       {label:'我知道了，就在這裡用', value:'stay', cls:'ghost'}]
+    ).then(function(v){
+      try{ localStorage.setItem('aips_iab_seen_v1', '1'); }catch(e){}
+      if(v === 'copy') iabCopy();
+    });
+  }, 400);
+})();
 
 /* ==================================================================
    最近刪除 — 丟進去、還原、永久刪除
