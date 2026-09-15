@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>AI 指令小幫手｜自媒體老師專用</title>
+<title>AI 定位指令工具包</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -326,8 +326,21 @@ select.inp{appearance:none;padding-right:34px}
 .home{margin-bottom:30px}
 .home-hero{padding:30px 28px;background:linear-gradient(165deg,var(--white) 55%,var(--orange-light))}
 .home-h{font-size:30px;font-weight:700;line-height:1.35;letter-spacing:.01em;margin-bottom:10px}
+.home-sub{font-size:19px;font-weight:700;color:#A8462A;line-height:1.5;margin-bottom:10px}
 /* 手機寬度會把「你。」單獨擠到下一行，所以兩半各自不斷行，要換就從逗號後面換 */
-.home-h span{display:inline-block}
+.home-sub span{display:inline-block}
+
+/* 備份頁最上面那張卡、製作頁「整理完成」提示 */
+.backup-card .h2{margin-bottom:8px}
+.backup-card p{font-size:14px;color:var(--medium);line-height:1.85}
+.gen-done{border-radius:12px;padding:10px 14px;margin-bottom:12px;
+  color:#4A6B41;background:#F2F5EE;border:1px solid #DBE3D3}
+.gen-done.mid{color:var(--dark);background:var(--caramel-light);border-color:var(--caramel-soft)}
+.gen-done b{display:block;font-size:14px}
+.gen-done span{display:block;font-size:12.5px;color:var(--medium);margin-top:2px;line-height:1.7}
+
+/* 選單圖示（側邊與手機底部共用同一組線條 SVG，顏色跟著文字走） */
+.nav button i svg,.mnav button i svg{display:block;width:20px;height:20px;margin:0 auto}
 .home-d{font-size:15px;color:var(--medium);line-height:1.85;margin-bottom:20px}
 .home-cta{padding:14px 26px;font-size:15.5px;white-space:normal;text-align:center}
 .home-status{font-size:14px;font-weight:700;border-radius:12px;padding:10px 14px;margin-bottom:16px;
@@ -396,20 +409,20 @@ select.inp{appearance:none;padding-right:34px}
     <div class="brand">
       <div class="brand-mark">指</div>
       <div class="brand-txt">
-        <strong>AI 指令小幫手</strong>
-        <span>自媒體老師專用</span>
+        <strong>AI 定位指令工具包</strong>
       </div>
     </div>
 
+    <!-- 選單名稱與手機底部導覽一致：我的定位｜開始製作｜指令庫｜備份 -->
     <nav class="nav">
       <div class="nav-lbl">第一步</div>
-      <button data-go="persona" class="on"><i>◈</i>人設定位</button>
+      <button data-go="persona" class="on"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/></svg></i>我的定位</button>
       <div class="nav-lbl">第二步</div>
-      <button data-go="gen"><i>✦</i>指令產生器</button>
+      <button data-go="gen"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M11 3.5l1.9 5.1 5.1 1.9-5.1 1.9L11 17.5l-1.9-5.1L4 10.5l5.1-1.9z"/><path d="M18.5 15l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg></i>開始製作</button>
       <div class="nav-lbl">收藏</div>
-      <button data-go="list"><i>▤</i>我的指令庫</button>
-      <div class="nav-lbl">總覽</div>
-      <button data-go="dash"><i>◎</i>儀表板</button>
+      <button data-go="list"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4.5" y="3" width="15" height="18" rx="2.5"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/></svg></i>指令庫</button>
+      <div class="nav-lbl">資料</div>
+      <button data-go="dash"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v10M7.5 9l4.5 4.5L16.5 9"/><path d="M4 14.5v3.5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3.5"/></svg></i>備份</button>
     </nav>
 
     <div class="side-foot">
@@ -420,14 +433,33 @@ select.inp{appearance:none;padding-right:34px}
 
   <main class="main">
 
-    <!-- ============ 儀表板 ============ -->
+    <!-- ============ 備份（原本的儀表板：備份放最上面，其餘統計、最近刪除都保留） ============ -->
     <section class="page" id="p-dash">
       <div class="head">
         <div>
-          <div class="h1">儀表板</div>
-          <div class="sub" id="dashHi">今天想生成什麼？</div>
+          <div class="h1">備份</div>
+          <div class="sub">匯出、匯入你的資料；下面也保留使用概況與最近刪除。</div>
         </div>
-        <button class="btn" onclick="go('gen')">＋ 開始產生指令</button>
+      </div>
+
+      <div class="card pad backup-card">
+        <div class="h2">🔒 資料儲存提醒</div>
+        <p>目前為本機儲存，資料只保存在這台裝置的這個瀏覽器中。</p>
+        <p>建議固定使用同一台裝置與瀏覽器，並定期使用「匯出備份」保存資料。</p>
+        <p>更換裝置或瀏覽器時，可使用「匯入備份」恢復資料。</p>
+        <div class="row" style="margin-top:16px">
+          <button class="btn" onclick="exportData()">匯出備份</button>
+          <button class="btn ghost" onclick="importPick()">匯入備份</button>
+        </div>
+        <div class="home-tip">資料不會上傳到任何地方，清除瀏覽器資料也會一起不見。<br><b>注意：從 LINE、Instagram 裡面點開的內建瀏覽器，跟 Safari／Chrome 也算「不同的瀏覽器」，資料不互通。</b></div>
+      </div>
+
+      <div class="head" style="margin:30px 0 14px">
+        <div>
+          <div class="h2" style="margin-bottom:0">使用概況</div>
+          <div class="sub" id="dashHi">今天想做什麼？</div>
+        </div>
+        <button class="btn" onclick="go('gen')">＋ 開始製作</button>
       </div>
 
       <div class="grid g4">
@@ -456,7 +488,7 @@ select.inp{appearance:none;padding-right:34px}
 
       <div class="sec">
         <div class="h2">各類型使用狀況</div>
-        <div class="sub" style="margin-bottom:14px">點卡片可直接跳到該類型的指令產生器</div>
+        <div class="sub" style="margin-bottom:14px">點卡片可以直接開始製作該類型</div>
         <div class="grid gauto" id="typeCards"></div>
       </div>
 
@@ -464,15 +496,6 @@ select.inp{appearance:none;padding-right:34px}
         <div class="h2">最近產生的指令</div>
         <div class="sub" style="margin-bottom:14px">最新 5 筆</div>
         <div id="recent"></div>
-      </div>
-
-      <div class="sec">
-        <div class="h2">資料備份</div>
-        <div class="sub" style="margin-bottom:14px">你的人設和指令只存在這台裝置的這個瀏覽器裡，不會上傳到任何地方。換裝置、換瀏覽器、清除瀏覽器資料都會不見——要換裝置就從這裡匯出，到另一台匯入。<br><b>注意：從 LINE、Instagram 裡面點開的內建瀏覽器，跟 Safari／Chrome 也算「不同的瀏覽器」，資料不互通。</b></div>
-        <div class="row">
-          <button class="btn ghost sm" onclick="exportData()">匯出備份</button>
-          <button class="btn ghost sm" onclick="importPick()">匯入備份</button>
-        </div>
       </div>
 
       <div class="sec">
@@ -495,8 +518,8 @@ select.inp{appearance:none;padding-right:34px}
         <div class="wiz-top">
           <div class="bar"></div>
           <div>
-            <div class="word">人設打底機</div>
-            <div class="sub">填一次，之後每一組指令都自動帶入</div>
+            <div class="word">AI 人設定位</div>
+            <div class="sub">讓 AI 認識你是誰、做什麼、想吸引誰，以及你的經歷與內容風格。建立一次，之後製作內容時會自動帶入。</div>
           </div>
           <div class="tg" id="wizTag">開始</div>
         </div>
@@ -513,8 +536,8 @@ select.inp{appearance:none;padding-right:34px}
     <section class="page" id="p-gen">
       <div class="head">
         <div>
-          <div class="h1">指令產生器</div>
-          <div class="sub">角色與背景已經從人設自動帶入，你只要回答「今天要做什麼」</div>
+          <div class="h1">今天想做什麼？</div>
+          <div class="sub">選一種內容、回答幾個問題就好，你的定位與人設資料會自動帶入。</div>
         </div>
       </div>
 
@@ -545,6 +568,7 @@ select.inp{appearance:none;padding-right:34px}
                 <button class="btn ghost sm" onclick="saveOut()">存進指令庫</button>
               </div>
             </div>
+            <div id="genDone"></div>
             <div id="genSteps"></div>
             <div class="out" id="genOut">左邊填一填，這裡就會即時長出完整指令。</div>
             <div class="warn" style="margin-top:14px">
@@ -593,10 +617,10 @@ select.inp{appearance:none;padding-right:34px}
 
 <!-- ============ 手機底部選單 ============ -->
 <nav class="mnav">
-  <button data-go="persona" class="on"><i>◈</i>人設</button>
-  <button data-go="gen"><i>✦</i>產生指令</button>
-  <button data-go="list"><i>▤</i>指令庫</button>
-  <button data-go="dash"><i>◎</i>儀表板</button>
+  <button data-go="persona" class="on"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/></svg></i>我的定位</button>
+  <button data-go="gen"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M11 3.5l1.9 5.1 5.1 1.9-5.1 1.9L11 17.5l-1.9-5.1L4 10.5l5.1-1.9z"/><path d="M18.5 15l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg></i>開始製作</button>
+  <button data-go="list"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4.5" y="3" width="15" height="18" rx="2.5"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/></svg></i>指令庫</button>
+  <button data-go="dash"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v10M7.5 9l4.5 4.5L16.5 9"/><path d="M4 14.5v3.5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3.5"/></svg></i>備份</button>
 </nav>
 
 <!-- ============ 新增／編輯 Modal ============ -->
@@ -668,7 +692,7 @@ select.inp{appearance:none;padding-right:34px}
 <div class="toast" id="toast"></div>
 <script>
 /* ==================================================================
-   AI 指令小幫手 — 資料層
+   AI 定位指令工具包 — 資料層
    ================================================================== */
 const K_P = 'aips_persona_v1';
 const K_R = 'aips_records_v1';
@@ -840,7 +864,7 @@ function save(){
       askOK('⚠️ 存不進去了',
         '<p>你剛才填的東西<b style="color:var(--orange)">沒有存到這台裝置上</b>，重整頁面就會不見。</p>' +
         '<p style="margin-top:10px">通常是瀏覽器空間滿了，或是你正在用無痕模式。</p>' +
-        '<p style="margin-top:10px">建議現在就到「儀表板 → 資料備份 → 匯出備份」，把資料存成檔案。</p>');
+        '<p style="margin-top:10px">建議現在就到「備份」頁按「匯出備份」，把資料存成檔案。</p>');
     }
   }
 }
@@ -2086,7 +2110,7 @@ function renderDash(){
 
   document.getElementById('dashHi').textContent = sc < 100
     ? '「' + personaName(persona) + '」還沒填完（' + sc + '%），先去補一下，指令品質差很多。'
-    : '目前套用「' + personaName(persona) + '」這組人設，今天想生成什麼？';
+    : '目前套用「' + personaName(persona) + '」這組人設，今天想做什麼？';
 
   // 類型卡
   document.getElementById('typeCards').innerHTML = TYPE_KEYS.map(k => {
@@ -2095,7 +2119,7 @@ function renderDash(){
     return '<button class="stat ' + t.cls + '" style="text-align:left" onclick="go(\'gen\');pickType(\'' + k + '\')">' +
       '<div class="k">' + t.icon + ' ' + t.name + '指令</div>' +
       '<div class="v">' + n + '<small>筆</small></div>' +
-      '<div class="n">點我開始產生 →</div></button>';
+      '<div class="n">點我開始製作 →</div></button>';
   }).join('');
 
   // 最近
@@ -2103,7 +2127,7 @@ function renderDash(){
   document.getElementById('recent').innerHTML = r5.length
     ? r5.map(r => itemHTML(r, true)).join('')
     : '<div class="card empty"><em>✎</em><p>還沒有存過任何指令</p>' +
-      '<button class="btn" onclick="go(\'gen\')">去產生第一組指令</button></div>';
+      '<button class="btn" onclick="go(\'gen\')">去開始製作</button></div>';
 
   renderTrash();
 }
@@ -2176,7 +2200,7 @@ function wStart(){
 function wReset(){
   askChoice('確定要清除嗎？',
     '<p>清除前的內容會放進<b style="color:var(--orange)">最近刪除</b>，' +
-    '<b>30 天內</b>可以到儀表板救回來。</p>' +
+    '<b>30 天內</b>可以到「備份」頁救回來。</p>' +
     '<p style="margin-top:10px">會被清掉的是「' + esc(personaName(persona)) + '」這一組人設，' +
     '你的指令庫跟其他組人設不會被動到。</p>',
     [{label:'取消', value:0}, {label:'確定清除', value:1, cls:'danger'}]
@@ -2279,9 +2303,9 @@ function wiz0(){
           '<span><b>背景</b> — 你是誰、賣什麼、對誰說<i>、</i></span>' +
           '<span><b>範例</b> — 你喜歡的句子<i>。</i></span>' +
         '</span>' +
-        '這裡填的是角色、背景、範例，任務留到產生指令時再問。</div></li>' +
+        '這裡填的是角色、背景、範例，任務留到「開始製作」時再問。</div></li>' +
       '<li><span class="n">2</span><div class="t">只勾你「原本就有」的特質，不要選你想成為但還不是的樣子——這樣寫出來的內容才會像你自己在說話，不會翻車。</div></li>' +
-      '<li><span class="n">3</span><div class="t">填完會產出一段可以直接貼進 ChatGPT 的「人設指令」，同時這份人設也會自動接到後面四種指令產生器裡。</div></li>' +
+      '<li><span class="n">3</span><div class="t">填完會產出一段可以直接貼進 ChatGPT 的「人設指令」，同時這份人設也會自動帶進「開始製作」的每一種內容裡。</div></li>' +
     '</ul>' +
     '<div class="wiz-nav"><button class="btn grow" onclick="wStart()">' + (sc > 0 || saved ? '繼續打底' : '開始打底') + '</button>' +
     (sc > 0 ? '<button class="btn ghost" onclick="wReset()">整份重新填</button>' : '') + '</div>';
@@ -2515,12 +2539,12 @@ function wiz14(){
       '<button class="btn grow" onclick="wCopyOut()">複製這段文字</button>' +
       '<button class="btn ghost" onclick="wSaveOut()">存進指令庫</button>' +
     '</div>' +
-    '<div class="note-box"><b>下一步：</b>切到左邊的「指令產生器」。你剛填的<b>角色</b>和<b>背景</b>會自動貼在每一份指令最前面，' +
+    '<div class="note-box"><b>下一步：</b>按「開始製作」。你剛填的<b>角色</b>和<b>背景</b>會自動貼在每一份指令最前面，' +
       '你只要回答「今天要做什麼」，剩下的系統幫你組好。</div>' +
     '<div class="wiz-nav">' +
       '<button class="btn ghost" onclick="wPrev()">回上一步修改</button>' +
       '<button class="btn ghost" onclick="wReset()">清空重新填</button>' +
-      '<button class="btn grow" onclick="go(\'gen\')">去產生指令 →</button>' +
+      '<button class="btn grow" onclick="go(\'gen\')">去開始製作 →</button>' +
     '</div>';
 }
 
@@ -2656,13 +2680,13 @@ function renderHome(){
   let status = '', cta;
   if(sc >= 60){
     status = '<div class="home-status">你的人設已建立 ✓<span>目前使用「' + name + '」，完成度 ' + sc + '%</span></div>';
-    cta = '<button class="btn home-cta" onclick="go(\'gen\')">開始產生今天的 AI 指令 →</button>' +
+    cta = '<button class="btn home-cta" onclick="go(\'gen\')">開始製作 →</button>' +
           '<button class="btn ghost" onclick="wStart()">修改我的人設</button>';
   } else if(sc > 0 || saved){
     status = '<div class="home-status mid">「' + name + '」已經填到 ' + sc + '%' +
              '<span>再補一些，產生的指令才會比較像你本人</span></div>';
     cta = '<button class="btn home-cta" onclick="wStart()">繼續建立我的人設 →</button>' +
-          '<button class="btn ghost" onclick="go(\'gen\')">先去看看指令產生器</button>';
+          '<button class="btn ghost" onclick="go(\'gen\')">先去開始製作</button>';
   } else {
     cta = '<button class="btn home-cta" onclick="wStart()">第一次使用？先建立我的人設 →</button>';
   }
@@ -2676,10 +2700,10 @@ function renderHome(){
 
   el.innerHTML =
     '<div class="card home-hero">' +
-      '<div class="eyebrow">AI 指令小幫手</div>' +
-      '<div class="home-h"><span>讓每一個 AI，</span><span>都更快認識你。</span></div>' +
-      '<div class="home-d">先建立一次你的 AI 人設，之後不管使用 ChatGPT、Claude、Gemini 或其他 AI，' +
-        '都能快速帶入你的經歷、定位、受眾與內容風格。</div>' +
+      '<div class="home-h">AI 定位指令工具包</div>' +
+      '<div class="home-sub"><span>讓不同的 AI，</span><span>都能快速認識你。</span></div>' +
+      '<div class="home-d">第一次使用先完成 AI 人設定位，之後每次製作內容時，' +
+        '系統都會自動帶入你的經歷、定位、受眾與內容風格。</div>' +
       status +
       '<div class="row">' + cta + '</div>' +
     '</div>' +
@@ -2703,7 +2727,7 @@ function renderHome(){
       '<b>資料儲存提醒</b><br>' +
       '目前為本機儲存，資料只保存在這台裝置的這個瀏覽器中。建議固定使用同一台裝置與瀏覽器，並定期使用「匯出備份」保存人設資料。' +
       (hasData ? '<div class="row" style="margin-top:10px"><button class="btn ghost sm" onclick="exportData()">現在匯出備份</button></div>' : '') +
-      '<div class="home-tip">「匯出備份／匯入備份」在<b>電腦版左下角</b>，手機版在<b>「儀表板 → 資料備份」</b>。</div>' +
+      '<div class="home-tip">「匯出備份／匯入備份」在<b>「備份」</b>頁：手機版在底部選單，電腦版在左側選單（左下角也有）。</div>' +
       '<div class="home-tip">📱 你可以將網站加入手機主畫面，方便下次快速開啟。<b>這只是開啟的捷徑，不代表資料已經備份。</b></div>' +
     '</div></div>';
 }
@@ -2770,7 +2794,7 @@ function delPersona(){
   askChoice('確定要刪除這組人設嗎？',
     '<p>要刪除的是「<b>' + esc(personaName(persona)) + '</b>」。</p>' +
     '<p style="margin-top:10px">刪除後會放進<b style="color:var(--orange)">最近刪除</b>，' +
-    '<b>30 天內</b>可以到儀表板救回來。已存進指令庫的指令不受影響。</p>',
+    '<b>30 天內</b>可以到「備份」頁救回來。已存進指令庫的指令不受影響。</p>',
     [{label:'取消', value:0}, {label:'確定刪除', value:1, cls:'danger'}]
   ).then(ok => {
     if(!ok){ toast('已取消，你的資料沒有被動到'); return; }
@@ -2843,7 +2867,7 @@ function renderGen(){
   const sc = personaScore();
   document.getElementById('personaWarn').innerHTML = sc < 60
     ? '<div class="warn" style="margin-bottom:20px"><span>⚠️</span><div><b>「' + esc(personaName(persona)) + '」目前只填了 ' + sc + '%。</b>' +
-      '現在就算產生指令，AI 也不認識你，出來的東西會很通用。' +
+      '現在就算開始製作，AI 也不認識你，出來的東西會很通用。' +
       '<button class="btn sm" style="margin-left:8px" onclick="go(\'persona\')">先去填人設</button></div></div>'
     : '';
 
@@ -2909,6 +2933,20 @@ function renderOut(){
     ? '<div class="warn hot" style="margin-bottom:12px"><div>' + cur.note + '</div></div>'
     : '';
   head.innerHTML = tabs + note;
+
+  /* 「整理完成」提示：只看這個類型目前看得到的必填欄位是不是都填了，不碰指令內容本身。
+     人設沒到 60%（跟上面 personaWarn 同一條線）就不能說「已帶入你的定位資料」，改講實話。 */
+  const doneEl = document.getElementById('genDone');
+  if(doneEl){
+    const gs = genState[gkey()] || {};
+    const missing = TYPES[curType].fields.filter(f =>
+      f.req && (!f.showIf || f.showIf(gs)) && !String(gs[f.k] || '').trim());
+    doneEl.innerHTML = missing.length ? '' : (personaScore() >= 60
+      ? '<div class="gen-done"><b>✦ 你的專屬 AI 指令已整理完成</b>' +
+        '<span>已自動帶入你的定位與人設資料，複製後貼到你想使用的 AI 即可。</span></div>'
+      : '<div class="gen-done mid"><b>✦ 你的 AI 指令已整理完成</b>' +
+        '<span>不過人設還沒填完，指令裡關於你的資料比較少。複製後貼到你想使用的 AI 即可，有空再回「我的定位」補齊。</span></div>');
+  }
 
   document.getElementById('genOut').textContent = cur.text;
   document.getElementById('genCount').textContent =
@@ -3005,7 +3043,7 @@ function renderList(){
     ? out.map(r => itemHTML(r)).join('')
     : '<div class="card empty"><em>◍</em><p>' +
       (records.length ? '沒有符合條件的指令，換個關鍵字試試' : '指令庫還是空的') +
-      '</p><button class="btn" onclick="go(\'gen\')">去產生指令</button></div>';
+      '</p><button class="btn" onclick="go(\'gen\')">去開始製作</button></div>';
 }
 
 function toggleFav(id){
@@ -3025,7 +3063,7 @@ function delRec(id){
   askChoice('確定要刪除嗎？',
     '<p>要刪除的是「<b>' + esc(r.title) + '</b>」。</p>' +
     '<p style="margin-top:10px">刪除後會放進<b style="color:var(--orange)">最近刪除</b>，' +
-    '<b>30 天內</b>可以到儀表板救回來。</p>',
+    '<b>30 天內</b>可以到「備份」頁救回來。</p>',
     [{label:'取消', value:0}, {label:'確定刪除', value:1, cls:'danger'}]
   ).then(ok => {
     if(!ok){ toast('已取消，你的資料沒有被動到'); return; }
@@ -3342,7 +3380,7 @@ function exportData(){
   const a = document.createElement('a');
   const d = new Date(); const p = n => String(n).padStart(2,'0');
   a.href = url;
-  a.download = 'AI指令小幫手備份_' + d.getFullYear() + p(d.getMonth()+1) + p(d.getDate()) + '.json';
+  a.download = 'AI定位指令工具包備份_' + d.getFullYear() + p(d.getMonth()+1) + p(d.getDate()) + '.json';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(()=>URL.revokeObjectURL(url), 1000);
   toast('備份已下載，記得存到雲端硬碟 ✓');
