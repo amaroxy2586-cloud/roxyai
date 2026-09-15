@@ -322,6 +322,41 @@ select.inp{appearance:none;padding-right:34px}
   .wiz-nav .btn{flex:1;min-width:0}
 }
 
+/* ---------- 首頁新手引導（只在人設打底機首頁、還沒按開始時出現）---------- */
+.home{margin-bottom:30px}
+.home-hero{padding:30px 28px;background:linear-gradient(165deg,var(--white) 55%,var(--orange-light))}
+.home-h{font-size:30px;font-weight:700;line-height:1.35;letter-spacing:.01em;margin-bottom:10px}
+/* 手機寬度會把「你。」單獨擠到下一行，所以兩半各自不斷行，要換就從逗號後面換 */
+.home-h span{display:inline-block}
+.home-d{font-size:15px;color:var(--medium);line-height:1.85;margin-bottom:20px}
+.home-cta{padding:14px 26px;font-size:15.5px;white-space:normal;text-align:center}
+.home-status{font-size:14px;font-weight:700;border-radius:12px;padding:10px 14px;margin-bottom:16px;
+  color:#4A6B41;background:#F2F5EE;border:1px solid #DBE3D3}
+.home-status.mid{color:var(--dark);background:var(--caramel-light);border-color:var(--caramel-soft)}
+.home-status span{display:block;font-size:12.5px;font-weight:400;color:var(--gray);margin-top:1px}
+.home-sec-h{font-size:15px;font-weight:700;margin:26px 0 10px}
+.home-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.home-step{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:16px}
+.home-step .no{font-size:11.5px;font-weight:700;color:#A8462A;letter-spacing:.08em}
+.home-step .t b{display:block;font-size:15px;margin:2px 0 4px}
+.home-step .t p{font-size:13px;color:var(--medium);line-height:1.7}
+.home-why{padding:20px 22px}
+.home-why p{font-size:14px;color:var(--medium);line-height:1.85}
+.home-why p+p{margin-top:8px}
+.home-store{margin-top:18px}
+.home-tip{font-size:12.5px;color:var(--gray);margin-top:8px;line-height:1.7}
+@media(max-width:760px){
+  .home-hero{padding:24px 20px}
+  .home-h{font-size:24px}
+  .home-d{font-size:14.5px}
+  .home-cta{width:100%}
+  .home-steps{grid-template-columns:1fr;gap:8px}
+  /* 手機改成橫排：左邊 STEP 編號、右邊內容。文字包在 .t 裡，避免 flex 把 <b> 拆成獨立欄位 */
+  .home-step{display:flex;gap:12px;align-items:flex-start;padding:12px 14px}
+  .home-step .no{flex:0 0 auto;margin-top:3px}
+  .home-step .t{flex:1 1 auto;min-width:0}
+}
+
 /* ---------- RWD ---------- */
 @media(max-width:960px){
   .g4{grid-template-columns:repeat(2,1fr)}
@@ -454,6 +489,7 @@ select.inp{appearance:none;padding-right:34px}
     <!-- ============ 人設定位（引導式精靈） ============ -->
     <section class="page on" id="p-persona">
       <div class="wiz-wrap">
+        <div class="home" id="homeHero"></div>
         <div class="pbar" id="personaBar"></div>
 
         <div class="wiz-top">
@@ -2304,6 +2340,8 @@ function wiz4(){
 
 function wiz5(){
   return hHead(hEye(5), '你的故事', '這是內容裡最有記憶點的部分。用三個問題把它挖出來，不用寫得很文青，講白話就好。') +
+    '<div class="warn hot" style="margin-bottom:22px"><span>💭</span><div><b>為什麼問這個？</b><br>' +
+      '你的過去也是現在人設故事的一部分。AI 越了解你怎麼走到今天，之後在協助你整理故事、經歷與內容時，就越容易貼近你本人。</div></div>' +
     hGuide(1, '開始做現在這件事之前，你的生活或工作是什麼樣子？', 'storyBefore',
            '例：一直是美業工作室老闆，那時候完全沒在經營社群') +
     hGuide(2, '發生了什麼事、或什麼契機，讓你決定開始？', 'storyTurning',
@@ -2464,8 +2502,10 @@ function wiz13(){
     hNav('產生我的人設指令 →');
 }
 function wiz14(){
-  return hHead('完成', '你的人設打底完成了',
-      '「GPT 人設指令」是要貼給 ChatGPT／Claude 的，貼上之後它就會記得你；「人設卡」是給你自己或學生對照用的摘要。') +
+  return hHead('完成', '你的人設建立完成了！✓',
+      '之後產生 AI 指令時，系統會自動帶入這份人設，你不用每次重新介紹自己。') +
+    '<div class="wiz-nav" style="margin:0 0 26px"><button class="btn grow home-cta" onclick="go(\'gen\')">開始產生第一組 AI 指令 →</button></div>' +
+    '<div style="font-size:12.5px;color:var(--gray);line-height:1.7;margin-bottom:12px">下面兩份可以另外留著用：「GPT 人設指令」是要貼給 ChatGPT／Claude 的，貼上之後它就會記得你；「人設卡」是給你自己或學生對照用的摘要。</div>' +
     '<div class="otabs">' +
       '<button class="otab' + (wizTab === 'gpt' ? ' on' : '') + '" onclick="wTabSet(\'gpt\')">GPT 人設指令</button>' +
       '<button class="otab' + (wizTab === 'card' ? ' on' : '') + '" onclick="wTabSet(\'card\')">人設卡摘要</button>' +
@@ -2598,8 +2638,75 @@ function renderWizard(){
   document.getElementById('wizR').textContent = pct + '%';
   document.getElementById('wizTag').textContent = shown === 0 ? '開始' : ('STEP ' + vi + ' / ' + total);
   renderPersonaBar();
+  renderHome();
 }
 function renderPersona(){ renderWizard(); }
+
+/* 首頁新手引導：第一次來的人要在幾秒內看懂「這是什麼、先做人設、做完去哪」。
+   只在打底機首頁（還沒按開始）出現，進到關卡裡就收起來，不干擾填寫。
+   「已建立」跟指令產生器那條「人設只填了 N%」提醒用同一條線（60%），兩邊說法才會一致。 */
+function renderHome(){
+  const el = document.getElementById('homeHero');
+  if(!el) return;
+  if(wizEntered){ el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = '';
+
+  const sc = personaScore(), saved = savedStepNo();
+  const name = esc(personaName(persona));
+  let status = '', cta;
+  if(sc >= 60){
+    status = '<div class="home-status">你的人設已建立 ✓<span>目前使用「' + name + '」，完成度 ' + sc + '%</span></div>';
+    cta = '<button class="btn home-cta" onclick="go(\'gen\')">開始產生今天的 AI 指令 →</button>' +
+          '<button class="btn ghost" onclick="wStart()">修改我的人設</button>';
+  } else if(sc > 0 || saved){
+    status = '<div class="home-status mid">「' + name + '」已經填到 ' + sc + '%' +
+             '<span>再補一些，產生的指令才會比較像你本人</span></div>';
+    cta = '<button class="btn home-cta" onclick="wStart()">繼續建立我的人設 →</button>' +
+          '<button class="btn ghost" onclick="go(\'gen\')">先去看看指令產生器</button>';
+  } else {
+    cta = '<button class="btn home-cta" onclick="wStart()">第一次使用？先建立我的人設 →</button>';
+  }
+
+  const step = (n, title, body) =>
+    '<div class="home-step"><div class="no">STEP ' + n + '</div>' +
+    '<div class="t"><b>' + title + '</b><p>' + body + '</p></div></div>';
+  /* STEP 2 直接從 TYPES 長出來，只列真的做得出來的類型 */
+  const typeNames = TYPE_KEYS.map(k => TYPES[k].name).join('、');
+  const hasData = sc > 0 || records.length > 0;
+
+  el.innerHTML =
+    '<div class="card home-hero">' +
+      '<div class="eyebrow">AI 指令小幫手</div>' +
+      '<div class="home-h"><span>讓每一個 AI，</span><span>都更快認識你。</span></div>' +
+      '<div class="home-d">先建立一次你的 AI 人設，之後不管使用 ChatGPT、Claude、Gemini 或其他 AI，' +
+        '都能快速帶入你的經歷、定位、受眾與內容風格。</div>' +
+      status +
+      '<div class="row">' + cta + '</div>' +
+    '</div>' +
+
+    '<div class="home-sec-h">使用方式</div>' +
+    '<div class="home-steps">' +
+      step(1, '建立人設', '回答幾個問題，把你的經歷、定位、受眾與內容風格整理起來。') +
+      step(2, '選擇今天要做什麼', '目前可以做：' + typeNames + '。') +
+      step(3, '產生專屬 AI 指令', '系統自動把「你的人設＋這次需求」組成完整指令，複製到你習慣用的 AI。') +
+    '</div>' +
+
+    '<div class="home-sec-h">為什麼要先建立人設？</div>' +
+    '<div class="card home-why">' +
+      '<p>AI 很強，但新的 AI 並不認識你。</p>' +
+      '<p>每次換一個 AI，如果都要重新介紹自己是誰、做什麼、想吸引誰、喜歡什麼語氣，其實很花時間。</p>' +
+      '<p>所以先把「你是誰」整理成一份 AI 看得懂的人設。</p>' +
+      '<p>之後每次產生內容指令時，系統就能自動帶入你的背景，不用每次從零開始介紹自己。</p>' +
+    '</div>' +
+
+    '<div class="warn home-store"><span>🔒</span><div>' +
+      '<b>資料儲存提醒</b><br>' +
+      '目前為本機儲存，資料只保存在這台裝置的這個瀏覽器中。建議固定使用同一台裝置與瀏覽器，並定期使用「匯出備份」保存人設資料。' +
+      (hasData ? '<div class="row" style="margin-top:10px"><button class="btn ghost sm" onclick="exportData()">現在匯出備份</button></div>' : '') +
+      '<div class="home-tip">「匯出備份／匯入備份」在<b>電腦版左下角</b>，手機版在<b>「儀表板 → 資料備份」</b>。</div>' +
+      '<div class="home-tip">📱 你可以將網站加入手機主畫面，方便下次快速開啟。<b>這只是開啟的捷徑，不代表資料已經備份。</b></div>' +
+    '</div></div>';
+}
 
 /* ==================================================================
    人設檔案管理：切換、新增、更名、複製、刪除
