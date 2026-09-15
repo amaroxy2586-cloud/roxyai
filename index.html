@@ -339,6 +339,16 @@ select.inp{appearance:none;padding-right:34px}
 .gen-done b{display:block;font-size:14px}
 .gen-done span{display:block;font-size:12.5px;color:var(--medium);margin-top:2px;line-height:1.7}
 
+/* 基礎定位開始頁的時間提示、STEP 1 裡的廣告用語清單、「讓 AI 更懂我」的分區 */
+.wiz-time{text-align:center;font-size:12px;color:var(--gray);margin-top:8px}
+.rule-details{margin:-4px 0 18px;border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:10px 14px}
+.rule-details summary{cursor:pointer;font-size:13px;font-weight:700;color:#9C4B32;line-height:1.6}
+.rule-details[open] summary{margin-bottom:12px}
+.deep-sec{margin-top:24px;padding-top:22px;border-top:1px solid var(--line)}
+.deep-h{font-size:16px;font-weight:700;margin-bottom:10px}
+.deep-d{font-size:12.5px;color:var(--gray);line-height:1.7;margin:-4px 0 14px}
+.deep-main{font-size:13px;line-height:1.75;background:var(--bg);border:1px dashed var(--line);border-radius:11px;padding:10px 13px;margin-bottom:14px}
+
 .gen-done .gen-copy{margin-top:10px}
 .gen-done .gen-hint{font-size:12px;color:var(--gray);margin-top:6px}
 
@@ -499,7 +509,7 @@ select.inp{appearance:none;padding-right:34px}
           <div class="n">加星號的常用指令</div>
         </div>
         <div class="stat c">
-          <div class="k">人設完成度</div>
+          <div class="k">基礎定位</div>
           <div class="v" id="s-persona">0<small>%</small></div>
           <div class="bar"><i id="s-persona-bar" style="width:0%"></i></div>
           <div class="n" id="s-persona-n">—</div>
@@ -746,8 +756,9 @@ const DEF_PERSONA = {
   /* 故事與優缺點 */
   storyBefore:'', storyTurning:'', storyResult:'',
   strengths:'', weaknesses:'',
-  /* 變現與問答 */
-  offers:[{name:'',desc:''}],
+  hobbies:'',   /* 工作以外喜歡什麼（讓 AI 更懂我）*/
+  /* 變現與問答。offers[0] 是基礎定位的「主要服務」，其餘在「讓 AI 更懂我」補；price 選填 */
+  offers:[{name:'',desc:'',price:''}],
   qa:[{q:'',a:''},{q:'',a:''},{q:'',a:''}],
   /* 【範例】你自己寫過、覺得好的句子；以及踩過的雷 */
   examples:[{note:'',text:''}],
@@ -793,10 +804,16 @@ function migrateOne(p){
 }
 /* 中間插了「AI 角色」(2) 與「你的範例」(10) 兩關，舊的關卡編號要往後推 */
 const STEP_REMAP = {0:0, 1:1, 2:3, 3:4, 4:5, 5:6, 6:7, 7:8, 8:9, 9:11, 10:12, 11:13, 12:14};
+/* 2026-09：13 關（0–14）改成基礎定位 5 關（1–5）＋完成頁（6）。step 只是「填到哪」的進度，
+   填過的欄位內容一個都不動。舊的進度對到「下一個還沒填的新關卡」：
+   舊 1 基本資料 → 1；舊 2 角色／3 特質／4 受眾 → 2 我想吸引誰；
+   舊 5 故事～8 主要服務 → 3 我主要提供什麼；舊 9 以後（服務已填）→ 6 完成頁 */
+const STEP_V3 = {0:0, 1:1, 2:2, 3:2, 4:2, 5:3, 6:3, 7:3, 8:3, 9:6, 10:6, 11:6, 12:6, 13:6, 14:6};
 function migrateSteps(p){
-  if(p.schemaV === 2) return false;
-  p.step = STEP_REMAP[p.step] !== undefined ? STEP_REMAP[p.step] : 0;
-  p.schemaV = 2;
+  if(p.schemaV === 3) return false;
+  if(p.schemaV !== 2) p.step = STEP_REMAP[p.step] !== undefined ? STEP_REMAP[p.step] : 0;   /* v1 → v2 */
+  p.step = STEP_V3[p.step] !== undefined ? STEP_V3[p.step] : 0;                              /* v2 → v3 */
+  p.schemaV = 3;
   return true;
 }
 /* ---- 身份／領域：舊版「所屬產業別」單選 → 新版複選 ----
@@ -865,7 +882,7 @@ function newPersona(label){
   p.id = pid();
   p.label = label || '';
   p.createdAt = Date.now();
-  p.schemaV = 2;   /* 新人設一出生就是新版關卡編號，不要再被 migrateSteps 轉一次 */
+  p.schemaV = 3;   /* 新人設一出生就是新版（5 關）關卡編號，不要再被 migrateSteps 轉一次 */
   p.identityV = 1; /* 一出生就是複選格式 */
   return p;
 }
@@ -1358,6 +1375,14 @@ function roleBlock(){
   return '【角色】\n' + r;
 }
 
+/* 一項服務寫成一句：名稱（說明；價格：…）。沒填的部分直接省略，不塞「未填」 */
+function offerText(o){
+  if(!o) return '';
+  const name = tx(o.name);
+  const more = [tx(o.desc), tx(o.price) ? '價格：' + tx(o.price) : ''].filter(Boolean).join('；');
+  return name ? name + (more ? '（' + more + '）' : '') : more;
+}
+
 /* 【背景】＝人設裡所有「AI 該知道但不用每次重打」的東西 */
 function bgBlock(){
   const p = persona, L = [];
@@ -1374,9 +1399,11 @@ function bgBlock(){
   put('他們私訊我的第一句話通常是', p.firstMessage);
   put('他們最渴望的改變', p.desiredChange);
 
-  const offers = (p.offers||[]).filter(o => tx(o.name) || tx(o.desc));
+  /* offers[0] 是基礎定位的主要服務，其餘是「讓 AI 更懂我」補的 */
+  const offers = (p.offers||[]).map(offerText).filter(Boolean);
   if(offers.length){
-    put('我賣什麼', offers.map(o => tx(o.name) + (tx(o.desc) ? '（' + tx(o.desc) + '）' : '')).join('；'));
+    put('我主要提供的服務／產品', offers[0]);
+    if(offers.length > 1) put('其他服務／產品', offers.slice(1).join('；'));
   }
 
   put('預約／聯絡動線', p.booking);
@@ -1395,6 +1422,7 @@ function bgBlock(){
   }
   put('我的優點（拿來建立信任）', p.strengths);
   put('我的缺點（拿來拉近距離）', p.weaknesses);
+  put('工作以外我喜歡的事（可以當生活題材）', p.hobbies);
 
   const act = j(p.readerAction) + (p.readerActionOther ? ((p.readerAction||[]).length ? '、' : '') + p.readerActionOther : '');
   put('看完我希望讀者做的事', act);
@@ -2168,6 +2196,26 @@ function scoreOf(p){
 }
 function personaScore(){ return scoreOf(persona); }
 
+/* 基礎定位（5 關）的完成度。「人設已建立 ✓」、指令產生器的提醒、完成提示、人設清單的 %，都看這個。
+   舊的 scoreOf 算的是全部 20 項（含選填的深度資料），拿來判斷「能不能用」會讓只填 5 關的人永遠不及格。
+   8 項有 5 項就算已建立：舊版填完的人自動符合，新使用者跳過幾題也還是能用。 */
+const BASIC_CHECKS = [
+  p => !!(p.nickname||'').trim(),
+  p => !!(p.expertise||'').trim(),
+  p => identityList(p).length > 0,
+  p => !!p.ageRange || (p.audienceType||[]).length > 0 || !!(p.audienceOther||'').trim(),
+  p => !!(p.painPoint||'').trim(),
+  p => (p.offers||[]).some(o => (o.name||'').trim() || (o.desc||'').trim()),
+  p => (p.commStyle||[]).length > 0 || (p.contentEnergy||[]).length > 0 || (p.interactStyle||[]).length > 0,
+  p => !!(p.aiRole||'').trim() || (p.bannedTone||[]).length > 0
+];
+function basicScoreOf(p){
+  let n = 0;
+  BASIC_CHECKS.forEach(f => { try{ if(f(p)) n++; }catch(e){} });
+  return Math.round(n / BASIC_CHECKS.length * 100);
+}
+function personaReady(p){ return basicScoreOf(p || persona) >= 60; }
+
 function renderDash(){
   const now = new Date();
   const ym = now.getFullYear() + '-' + (now.getMonth()+1);
@@ -2176,7 +2224,7 @@ function renderDash(){
     return d.getFullYear() + '-' + (d.getMonth()+1) === ym;
   }).length;
   const favCnt = records.filter(r => r.fav).length;
-  const sc = personaScore();
+  const sc = basicScoreOf(persona);
 
   document.getElementById('s-total').innerHTML = records.length + '<small>筆</small>';
   document.getElementById('s-month').innerHTML = monthCnt + '<small>筆</small>';
@@ -2190,9 +2238,9 @@ function renderDash(){
     records.length ? '最近一筆：' + fmtDate(records[0].createdAt) : '還沒有任何紀錄';
   document.getElementById('s-month-n').textContent = (now.getMonth()+1) + ' 月累計';
 
-  document.getElementById('dashHi').textContent = sc < 100
-    ? '「' + personaName(persona) + '」還沒填完（' + sc + '%），先去補一下，指令品質差很多。'
-    : '目前套用「' + personaName(persona) + '」這組人設，今天想做什麼？';
+  document.getElementById('dashHi').textContent = personaReady(persona)
+    ? '目前套用「' + personaName(persona) + '」這組人設，今天想做什麼？'
+    : '「' + personaName(persona) + '」的基礎定位還差一點（' + sc + '%），先走完 5 關，產出的指令會更像你。';
 
   // 類型卡
   document.getElementById('typeCards').innerHTML = TYPE_KEYS.map(k => {
@@ -2224,14 +2272,12 @@ let wizTab = 'gpt';
    所以一律先停在首頁，由使用者自己決定要繼續還是重來。這個旗標不存檔，關掉分頁就歸零。 */
 let wizEntered = false;
 
-const WIZ_LABEL = ['開始之前','基本資料','AI 角色','特質勾選','目標受眾','你的故事','優點與缺點',
-                   '語氣風格','主要服務','客戶問答','你的範例','內容目標','品牌關鍵詞','廣告用語提醒','完成'];
-
-/* 第 13 關（廣告用語）只有身份／領域勾了美容或醫美才會出現 */
-function wizSeq(){
-  const all = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14];
-  return all.filter(i => i !== 13 || isBeautyLike(persona));
-}
+/* 基礎定位 5 關（1–5）＋完成頁（6）。「讓 AI 更懂我」不是關卡，是另外一頁（wizDeep）。
+   廣告用語清單不再是獨立一關，收在 STEP 1 勾了美容／醫美才出現。 */
+const BASIC_TOTAL = 5;
+const WIZ_LABEL = ['開始之前','我是誰','我想吸引誰','我主要提供什麼','我是什麼樣的人','AI 要怎麼幫我說話','基礎定位完成'];
+let wizDeep = false;   /* 正在看「讓 AI 更懂我」。不存檔，跟 wizEntered 一樣關掉分頁就歸零 */
+function wizSeq(){ return [0,1,2,3,4,5,6]; }
 
 /* ---- 狀態操作：文字欄位只存不重繪，才不會打字打到一半失焦 ---- */
 function wSet(k, v){
@@ -2254,26 +2300,33 @@ function wPick(k, i){
 function wTop(){ window.scrollTo({top:0, behavior:'smooth'}); }
 function wNext(){ const s = wizSeq(), i = s.indexOf(persona.step); if(i < s.length - 1){ persona.step = s[i+1]; save(); renderWizard(); wTop(); } }
 function wPrev(){ const s = wizSeq(), i = s.indexOf(persona.step); if(i > 0){ persona.step = s[i-1]; save(); renderWizard(); wTop(); } }
-function wGo(n){ wizEntered = true; persona.step = n; save(); renderWizard(); wTop(); }
+function wGo(n){ wizEntered = true; wizDeep = false; persona.step = n; save(); renderWizard(); wTop(); }
+function wDeep(){ wizEntered = true; wizDeep = true; renderWizard(); wTop(); }
+/* 從「讓 AI 更懂我」回去：基礎定位走完的回完成頁，還沒走完的回開始頁 */
+function wDeepBack(){
+  wizDeep = false;
+  wizEntered = persona.step === BASIC_TOTAL + 1;
+  renderWizard(); wTop();
+}
 
 /* 上次填到第幾步（給人看的序號，跟右上角的 STEP N 同一套算法）。0＝還停在首頁 */
 function savedStepNo(){
-  const i = wizSeq().indexOf(persona.step);
-  return i > 0 ? i : 0;
+  const s = persona.step;
+  return (s > 0 && s <= BASIC_TOTAL) ? s : 0;   /* 完成頁（6）不算「填到一半」 */
 }
 /* 首頁那顆按鈕。有舊紀錄就先問，不要默默把人丟回第 N 步。
-   已經在流程裡的人（例如從第 1 步按「上一步」退回首頁）不用再問一次，直接往下走。 */
+   已經在流程裡的人（例如從第 1 步按「上一步」退回首頁）、或基礎定位已經走完的人，不用再問，直接從第 1 關看起。 */
 function wStart(){
   const n = savedStepNo();
-  if(wizEntered || !n){ wGo(wizSeq()[1]); return; }
+  if(wizEntered || !n){ wGo(1); return; }
   askChoice('要恢復上一次的紀錄嗎？',
-    '<p>你上次填到<b style="color:var(--orange)">第 ' + n + ' 步</b>。</p>' +
+    '<p>你上次填到<b style="color:var(--orange)">第 ' + n + ' 步</b>（共 ' + BASIC_TOTAL + ' 步）。</p>' +
     '<p style="margin-top:10px">「繼續上次的紀錄」會直接回到第 ' + n + ' 步接著填；' +
     '「清空，重新做一份」會把「' + esc(personaName(persona)) + '」這組人設清乾淨。</p>',
     [{label:'清空，重新做一份', value:'reset', cls:'danger'},
      {label:'繼續上次的紀錄', value:'resume', cls:''}]
   ).then(v => {
-    if(v === 'resume'){ wGo(persona.step || wizSeq()[1]); return; }
+    if(v === 'resume'){ wGo(persona.step || 1); return; }
     if(v === 'reset') wReset();
   });
 }
@@ -2300,10 +2353,10 @@ function wReset(){
   });
 }
 function wOffer(i, k, v){ persona.offers[i][k] = v; save(); }
-function wOfferAdd(){ persona.offers.push({name:'',desc:''}); save(); renderWizard(); }
+function wOfferAdd(){ persona.offers.push({name:'',desc:'',price:''}); save(); renderWizard(); }
 function wOfferDel(i){
   persona.offers.splice(i, 1);
-  if(!persona.offers.length) persona.offers.push({name:'',desc:''});
+  if(!persona.offers.length) persona.offers.push({name:'',desc:'',price:''});
   save(); renderWizard();
 }
 function wQa(i, k, v){ persona.qa[i][k] = v; save(); }
@@ -2320,8 +2373,7 @@ function hHead(eyebrow, title, desc){
          (desc ? '<div class="wiz-d">' + desc + '</div>' : '');
 }
 function hEye(step){
-  const s = wizSeq();
-  return 'STEP ' + s.indexOf(step) + '／' + (s.length - 1);
+  return 'STEP ' + step + '／' + BASIC_TOTAL;
 }
 function hText(label, hint, key, ph, multi){
   const v = esc(persona[key] || '');
@@ -2370,13 +2422,75 @@ function fillRole(){
 }
 
 /* ---- 每一關 ---- */
+/* ==================================================================
+   基礎 AI 定位：5 關＋完成頁
+   2026-09 真人實測：13 關第一次填不完，有人問「一定要全部填嗎？」。
+   第一次只走 5 關就能用；其他有價值但不急的放到「讓 AI 更懂我」（wizDeepBody），
+   資料欄位一個都沒刪，舊資料照樣帶進指令。
+   ================================================================== */
+
+/* 美容／醫美的廣告用語清單：原本是獨立一關，現在收在 STEP 1 裡，勾了才出現、點開才看 */
+function adRulesBox(){
+  const banHtml = AD_RULES.ban.map(g =>
+    '<div style="margin-bottom:12px"><b style="color:#9C4B32">🚫 ' + g[0] + '</b>' +
+    '<div style="font-size:12.5px;line-height:1.85;margin-top:3px">' + esc(g[1]) + '</div></div>').join('');
+  const okHtml = AD_RULES.ok.map(g =>
+    '<div style="margin-bottom:9px"><b style="color:#4A6B41">✓ ' + g[0] + '</b>' +
+    '<div style="font-size:12.5px;line-height:1.85;margin-top:3px">' + esc(g[1]) + '</div></div>').join('');
+  return '<details class="rule-details"><summary>你勾了美容或醫美相關：之後的指令會自動提醒 AI 避開衛生局的廣告禁用詞（點開看清單）</summary>' +
+    '<div class="rulebox">' +
+      '<div class="rulebox-h">不可刊登（會被開罰）</div>' + banHtml +
+    '</div>' +
+    '<div class="rulebox ok" style="margin-top:14px">' +
+      '<div class="rulebox-h" style="color:#4A6B41">可以改用這些說法</div>' + okHtml +
+    '</div>' +
+    '<div class="rulebox" style="margin-top:14px">' +
+      '<div class="rulebox-h">連店名／館名也受規範</div>' +
+      '<div style="font-size:12.5px;line-height:1.9">' +
+        '<b style="color:#9C4B32">🚫 不可用：</b>' + esc(AD_RULES.nameBad.join('、')) + '<br>' +
+        '<b style="color:#4A6B41">✓ 可以用：</b>' + esc(AD_RULES.nameOk.join('、')) +
+      '</div>' +
+    '</div>' +
+    '<div class="warn hot" style="margin-top:14px"><span>☎️</span><div>' +
+      '<b>有任何疑義，直接打電話問當地衛生局</b>，不要相信網路上流傳的版本。這份清單是給 AI 當防呆用的，最終責任還是在刊登的人身上。</div></div>' +
+    '<label class="cbrow" style="margin-top:14px"><input type="checkbox"' + (persona.complianceAck ? ' checked' : '') +
+      ' onchange="wCheck(\'complianceAck\',this.checked)">我知道了，之後生成內容時會避開這些字眼</label>' +
+    '<div style="font-size:12px;color:var(--gray);margin-top:8px">不管有沒有勾，這份清單都會自動寫進指令的【背景】裡。</div>' +
+  '</details>';
+}
+
 function wiz0(){
   const sc = personaScore(), saved = savedStepNo();
-  return hHead('開始之前', '先花 15 分鐘，把自己的人設打好底',
-      '這一份填完，之後每次下指令都只要補「今天要做什麼」，角色跟背景系統會自動幫你貼上去。想到什麼先寫，不用一次想到完美，之後隨時能改。' +
-      '每答一題自動存檔（僅限這台裝置的這個瀏覽器；清除瀏覽器資料會消失，建議填完立刻匯出備份）。') +
-    (saved ? '<div class="warn" style="margin-bottom:22px"><span>💾</span><div>' +
-      '<b>你上次填到第 ' + saved + ' 步。</b>按下面那顆按鈕，可以選擇接著填，或是清空重做。</div></div>' : '') +
+  /* 只看內容，不看 step：更舊版（v1）的進度可能被對到完成頁，但資料其實很少，不能說「已經建立好了」 */
+  const done = personaReady(persona);
+  const lead =
+    '<p>第一次只要回答幾個簡單問題，先讓 AI 知道你是誰、做什麼、想吸引誰，以及你希望內容怎麼說話。</p>' +
+    '<p style="margin-top:8px">不知道的可以先跳過，之後隨時都能回來補充。你提供得越完整，AI 越容易產出更貼近你的內容，但不需要全部填完才能開始使用。</p>' +
+    '<p style="margin-top:8px;font-size:12.5px;color:var(--gray)">每答一題自動存檔（僅限這台裝置的這個瀏覽器；清除瀏覽器資料會消失，建議定期匯出備份）。</p>';
+
+  let status = '', nav;
+  if(done){
+    /* 已經有基礎定位（包含舊版 13 關填完的人）：不要叫他重填 */
+    status = '<div class="warn" style="margin-bottom:22px"><span>✓</span><div><b>「' + esc(personaName(persona)) + '」的基礎定位已經建立好了。</b>' +
+      '可以直接開始製作；想讓 AI 更像你，再到「讓 AI 更懂我」慢慢補。</div></div>';
+    nav = '<div class="wiz-nav">' +
+            '<button class="btn grow" onclick="wDeep()">讓 AI 更懂我 →</button>' +
+            '<button class="btn ghost" onclick="wStart()">修改基礎定位</button>' +
+            '<button class="btn ghost" onclick="wReset()">整份重新填</button>' +
+          '</div>';
+  } else if(sc > 0 || saved){
+    status = saved ? '<div class="warn" style="margin-bottom:22px"><span>💾</span><div>' +
+      '<b>你上次填到第 ' + saved + ' 步（共 ' + BASIC_TOTAL + ' 步）。</b>按下面那顆按鈕，可以選擇接著填，或是清空重做。</div></div>' : '';
+    nav = '<div class="wiz-nav">' +
+            '<button class="btn grow" onclick="wStart()">繼續建立我的定位 →</button>' +
+            '<button class="btn ghost" onclick="wReset()">整份重新填</button>' +
+          '</div><div class="wiz-time">約 3～5 分鐘</div>';
+  } else {
+    nav = '<div class="wiz-nav"><button class="btn grow" onclick="wStart()">快速建立我的定位 →</button></div>' +
+          '<div class="wiz-time">約 3～5 分鐘</div>';
+  }
+
+  return hHead('開始之前', '先建立你的基礎 AI 定位', lead) + status +
     '<ul class="wlist">' +
       '<li><span class="n">1</span><div class="t">好指令一定有四塊：' +
         '<span class="four">' +
@@ -2387,18 +2501,15 @@ function wiz0(){
         '</span>' +
         '這裡填的是角色、背景、範例，任務留到「開始製作」時再問。</div></li>' +
       '<li><span class="n">2</span><div class="t">只勾你「原本就有」的特質，不要選你想成為但還不是的樣子——這樣寫出來的內容才會像你自己在說話，不會翻車。</div></li>' +
-      '<li><span class="n">3</span><div class="t">填完會產出一段可以直接貼進 ChatGPT 的「人設指令」，同時這份人設也會自動帶進「開始製作」的每一種內容裡。</div></li>' +
-    '</ul>' +
-    '<div class="wiz-nav"><button class="btn grow" onclick="wStart()">' + (sc > 0 || saved ? '繼續打底' : '開始打底') + '</button>' +
-    (sc > 0 ? '<button class="btn ghost" onclick="wReset()">整份重新填</button>' : '') + '</div>';
+      '<li><span class="n">3</span><div class="t">走完 ' + BASIC_TOTAL + ' 關就會產出一段可以直接貼進 ChatGPT、Claude、Gemini 的「人設指令」，同時這份人設也會自動帶進「開始製作」的每一種內容裡。</div></li>' +
+    '</ul>' + nav;
 }
 
+/* STEP 1｜我是誰 */
 function wiz1(){
-  return hHead(hEye(1), '基本資料', '先取一個你在內容裡想被稱呼的名字，再用一句話講清楚你是誰、幫誰、做到什麼。') +
+  return hHead(hEye(1), '我是誰', '先讓 AI 知道你的基本身份與專業。') +
     hText('暱稱／人設名稱', '在內容裡你想怎麼被稱呼？可以是本名、藝名或工作室名。', 'nickname', '例：Roxy、AMA salon') +
-    hText('IG／主要經營的帳號', '寫成 @ 開頭。AI 之後寫 CTA、寫署名會用到。', 'handle', '例：@ama.roxy') +
-    hText('一句話定位', '公式：我是幫（誰）做到（什麼結果）的（身分）。', 'positioning',
-          '例：中壢在地、療癒手作風的美業工作室') +
+    hText('IG／主要經營的帳號（選填）', '寫成 @ 開頭。AI 之後寫 CTA、寫署名會用到。', 'handle', '例：@ama.roxy') +
     hText('你的專業是什麼', '你最會、講起來最有底氣的那一塊。這決定 AI 敢不敢用專業口吻替你說話。', 'expertise',
           '例：臉部保養療程、輕熟齡肌膚調理', true) +
     hChips('你目前有哪些身份／領域？', '可以複選，選出現在跟你有關的身份或領域就好。', 'identities', true) +
@@ -2407,218 +2518,84 @@ function wiz1(){
       : '') +
     /* 從舊版「美業／醫美相關」轉過來、而且還沒動過選項的人，提醒一次做醫美要自己加勾 */
     (persona.industry === LEGACY_BEAUTY && identityList().join('|') === BEAUTY_IDS[0]
-      ? '<div class="hint" style="margin:-8px 0 18px;font-size:12.5px;color:var(--gray)">你之前選的是舊版的「美業／醫美相關」，已先轉成「美容／美睫／美甲／美髮」。如果你也做醫美，請再勾選「醫美相關」。</div>'
+      ? '<div style="margin:-8px 0 18px;font-size:12.5px;color:var(--gray)">你之前選的是舊版的「美業／醫美相關」，已先轉成「美容／美睫／美甲／美髮」。如果你也做醫美，請再勾選「醫美相關」。</div>'
       : '') +
+    (isBeautyLike(persona) ? adRulesBox() : '') +
     hNav();
 }
 
+/* STEP 2｜我想吸引誰：原本三題深入問題，第一次只問最主要的困擾 */
 function wiz2(){
-  return hHead(hEye(2), '要 AI 扮演誰',
-      '這是每一份指令的第一句話，也是最關鍵的一塊。你不先指定角色，AI 就會拿它預設的萬用行銷腔回你——內容有沒有「AI 味」幾乎都是差在這裡。') +
-    '<div class="warn hot" style="margin-bottom:22px"><span>🎭</span><div><b>寫法：</b>' +
-      '「妳是 ○○（品牌）的 ××（職稱），△ 年經驗，專寫⋯⋯」。越具體越好，' +
-      '連「不走網紅風」這種限制都可以直接寫進去。</div></div>' +
-    hText('AI 要扮演的角色', '不知道怎麼下筆就按下面那顆，我先用你的人設湊一句，你再改成自己的話。', 'aiRole',
-          '例：妳是 AMA salon（中壢美業）的療癒系 IG 小編，10 年經驗，專寫不走網紅風的療程介紹', true) +
-    '<button class="add-row" onclick="fillRole()">✨ 幫我依人設自動帶一句</button>' +
-    '<div class="hint" style="margin-top:10px">留空也能用，系統會自動幫你湊，但自己寫的一定比較準。</div>' +
+  return hHead(hEye(2), '我想吸引誰', '先有一個基本輪廓就好，更細的之後可以在「讓 AI 更懂我」補。') +
+    hChips('主要年齡層', null, 'ageRange', false) +
+    hChips('身分背景（可複選）', null, 'audienceType', true) +
+    hText('其他身分補充（選填）', null, 'audienceOther', '例：中壢在地、想保養但不走醫美的女性') +
+    hText('他們現在最困擾的是什麼？', '先寫最主要的一個就好。', 'painPoint',
+          '例：想開始經營自媒體，但不知道每天可以拍什麼。', true) +
     hNav();
 }
 
+/* STEP 3｜我主要提供什麼：只問 offers[0]。
+   基礎人設記「平常主要做什麼」；之後月計畫問「這個月想推什麼」、單篇製作問「今天這篇要介紹什麼」，三者不互相覆蓋 */
 function wiz3(){
-  return hHead(hEye(3), '你的特質勾選', '把「原本就有的個性」整理成標籤，而不是演一個不是自己的角色。') +
-    '<div class="warn hot" style="margin-bottom:22px"><span>💡</span><div><b>防翻車提醒：</b>' +
-      '只勾你真的擁有、平常就會表現出來的特質。人設跟真人不符，內容會失去記憶點，也很容易被熟識的人看出破綻。</div></div>' +
+  if(!persona.offers.length) persona.offers.push({name:'', desc:'', price:''});
+  const o = persona.offers[0];
+  const more = persona.offers.slice(1).filter(x => (x.name||'').trim() || (x.desc||'').trim()).length;
+  return hHead(hEye(3), '我主要提供什麼', '先寫 1 個你最主要的服務或產品，讓 AI 知道你平常在做什麼、能幫別人解決什麼問題。') +
+    '<div class="field"><label>你目前最主要提供的服務／產品是什麼？</label>' +
+      '<input class="inp" value="' + esc(o.name || '') + '" oninput="wOffer(0,\'name\',this.value)" placeholder="例：一對一剪輯教學"></div>' +
+    '<div class="field"><label>它主要可以幫助什麼樣的人，解決什麼問題？</label>' +
+      '<textarea class="inp" oninput="wOffer(0,\'desc\',this.value)" placeholder="例：一對一剪輯教學，幫助想經營自媒體、但不會拍也不會剪的人開始做出自己的短影音。">' +
+      esc(o.desc || '') + '</textarea></div>' +
+    '<div class="field"><label>價格（選填）</label>' +
+      '<input class="inp" value="' + esc(o.price || '') + '" oninput="wOffer(0,\'price\',this.value)" placeholder="例：NT$3,000／堂"></div>' +
+    '<div style="font-size:12.5px;color:var(--gray);line-height:1.75">' +
+      (more ? '你另外還有 ' + more + ' 項服務，放在「讓 AI 更懂我 → 我的完整服務」。'
+            : '其他服務之後可以在「讓 AI 更懂我」繼續新增。') +
+      '這裡記的是你平常主要在做什麼；「這個月想推什麼」「今天這篇要介紹什麼」之後會另外問，不會蓋掉這裡。</div>' +
+    hNav();
+}
+
+/* STEP 4｜我是什麼樣的人：原本「特質勾選」＋「語氣風格」的選擇題，盡量用按的 */
+function wiz4(){
+  return hHead(hEye(4), '我是什麼樣的人', '用按的就好，快速抓到你的個性與內容感覺。') +
+    '<div class="warn hot" style="margin-bottom:22px"><span>💡</span><div><b>只勾你原本就有的：</b>' +
+      '人設跟真人不符，內容會失去記憶點，也很容易被熟識的人看出破綻。</div></div>' +
     hChips('溝通風格（可複選）', null, 'commStyle', true) +
     hChips('內容能量感（可複選）', null, 'contentEnergy', true) +
     hChips('跟受眾互動的方式（可複選）', null, 'interactStyle', true) +
+    hChips('說話節奏（選填）', null, 'toneRhythm', false) +
     hText('自訂特質（選填）', '上面沒有的形容詞，或朋友、學生形容你的用詞。', 'customTraits',
           '例：龜毛、很會安慰人、講話很直但不傷人') +
     hNav();
 }
 
-function wiz4(){
-  return hHead(hEye(4), '你的目標受眾', '先勾出輪廓，再用三個小情境把「他們到底是誰」想具體。') +
-    hChips('主要年齡層', null, 'ageRange', false) +
-    hChips('身分背景（可複選）', null, 'audienceType', true) +
-    hText('其他身分補充（選填）', null, 'audienceOther', '例：中壢在地、想保養但不走醫美的女性') +
-    hGuide(1, '他們半夜滑手機、腦子裡在煩惱的問題是什麼？', 'painPoint',
-           '例：想保養又怕踩雷，看醫美廣告覺得太誇張不敢去') +
-    hGuide(2, '如果他們鼓起勇氣私訊你，第一句話通常會怎麼打？', 'firstMessage',
-           '例：想請問一下你們的療程費用大概多少？') +
-    hGuide(3, '他們最渴望的改變，用一句話講是什麼？', 'desiredChange',
-           '例：每個月有一次真正放鬆、被好好照顧的時間') +
-    hNav();
-}
-
+/* STEP 5｜AI 要怎麼幫我說話：原本「要 AI 扮演誰」＋語氣裡跟輸出限制有關的部分 */
 function wiz5(){
-  return hHead(hEye(5), '你的故事', '這是內容裡最有記憶點的部分。用三個問題把它挖出來，不用寫得很文青，講白話就好。') +
-    '<div class="warn hot" style="margin-bottom:22px"><span>💭</span><div><b>為什麼問這個？</b><br>' +
-      '你的過去也是現在人設故事的一部分。AI 越了解你怎麼走到今天，之後在協助你整理故事、經歷與內容時，就越容易貼近你本人。</div></div>' +
-    hGuide(1, '開始做現在這件事之前，你的生活或工作是什麼樣子？', 'storyBefore',
-           '例：一直是美業工作室老闆，那時候完全沒在經營社群') +
-    hGuide(2, '發生了什麼事、或什麼契機，讓你決定開始？', 'storyTurning',
-           '例：看到同行靠自媒體招到客人，加上店裡員工要養，決定報名學習') +
-    hGuide(3, '具體的成果是什麼？盡量講數字或明確例子，越具體越有說服力', 'storyResult',
-           '例：學習 3 個月後，第一個月業績就成長了一萬元') +
-    hNav();
-}
-
-function wiz6(){
-  return hHead(hEye(6), '優點與缺點', '這兩個都能變成內容切角——優點建立信任，缺點讓人覺得你真實、有共鳴。') +
-    hText('我的優點', '可以轉化成「為什麼要信任我」的內容。', 'strengths',
-          '例：很有耐心、會先鼓勵再糾正，客人不會害怕問問題', true) +
-    hText('我的缺點', '可以轉化成「真實不完美」的內容，拉近距離。', 'weaknesses',
-          '例：一開始很怕鏡頭、常常拖延不敢發第一篇', true) +
-    hNav();
-}
-
-function wiz7(){
-  return hHead(hEye(7), '語氣風格', '決定你的內容「聽起來」是什麼感覺，也決定哪些說法絕對不要出現。') +
-    hChips('說話節奏', null, 'toneRhythm', false) +
-    hChips('絕對不要出現的語氣（可複選）', '這欄比你想像中重要——AI 最容易翻車的就是自作主張的行銷腔。', 'bannedTone', true) +
+  return hHead(hEye(5), 'AI 要怎麼幫我說話', '決定之後產出內容時，AI 用什麼角色、什麼方式替你說話。') +
+    hText('AI 要扮演的角色', '不知道怎麼寫，可以按下面那顆，系統會先依照前面的資料幫你產生一句，你再改成自己的話。', 'aiRole',
+          '例：妳是 AMA salon（中壢美業）的療癒系 IG 小編，10 年經驗，專寫不走網紅風的療程介紹', true) +
+    '<button class="add-row" onclick="fillRole()">✨ 幫我依人設自動帶一句</button>' +
+    '<div style="margin:10px 0 20px;font-size:12.5px;color:var(--gray)">留空也能用，系統會自動幫你湊，但自己寫的一定比較準。</div>' +
+    hChips('絕對不要出現的語氣（可複選）', 'AI 最容易翻車的就是自作主張的行銷腔。', 'bannedTone', true) +
     hText('語氣補充（選填）', null, 'toneNote',
           '例：可以保留一點行動呼籲的急迫感，但不要太溫吞；不要用驚嘆號', true) +
-    hNav();
-}
-
-function wiz8(){
-  const rows = persona.offers.map((o, i) =>
-    '<div class="offer-row">' +
-      '<input class="inp" value="' + esc(o.name) + '" oninput="wOffer(' + i + ',\'name\',this.value)" placeholder="服務名稱">' +
-      '<input class="inp" value="' + esc(o.desc) + '" oninput="wOffer(' + i + ',\'desc\',this.value)" placeholder="一句話說明（建議帶價格）">' +
-      '<button class="offer-x" onclick="wOfferDel(' + i + ')">✕</button>' +
-    '</div>').join('');
-  return hHead(hEye(8), '主要服務／Offer', '列出你想透過內容推廣的服務或商品，最多 5 項。把價格帶進去，AI 寫文案時比較知道分寸。') +
-    '<div class="field"><label>你賣什麼</label>' +
-    '<div class="hint">左邊填服務名稱，右邊用一句話說明。</div>' + rows +
-    (persona.offers.length < 5 ? '<button class="add-row" onclick="wOfferAdd()">＋ 新增一項服務</button>' : '') +
-    '</div>' + hNav();
-}
-
-function wiz9(){
-  const rows = persona.qa.map((x, i) =>
-    '<div class="gq">' +
-      '<label><span class="qnum">' + (i+1) + '</span>客戶最常問的問題' +
-      (persona.qa.length > 1 ? '<button class="del" style="float:right;font-weight:400" onclick="wQaDel(' + i + ')">刪除</button>' : '') +
-      '</label>' +
-      '<input class="inp" style="margin-bottom:8px" value="' + esc(x.q) + '" oninput="wQa(' + i + ',\'q\',this.value)" ' +
-        'placeholder="例：做臉多久做一次才有效？">' +
-      '<textarea class="inp" oninput="wQa(' + i + ',\'a\',this.value)" ' +
-        'placeholder="你平常怎麼回答？用你跟客人講話的方式寫，越像你越好">' + esc(x.a) + '</textarea>' +
-    '</div>').join('');
-  return hHead(hEye(9), '客戶最常問你的問題',
-      '這是背景裡最值錢的一段。把客戶最常問的問題＋你平常怎麼回答寫下來，AI 產出的貼文和腳本就會直接命中真正的困惑，而不是講一堆漂亮廢話。建議至少填 3 組。') +
-    rows +
-    '<button class="add-row" style="margin-top:14px" onclick="wQaAdd()">＋ 再加一組問答</button>' +
-    hNav();
-}
-
-function wiz10(){
-  const rows = persona.examples.map((x, i) =>
-    '<div class="gq">' +
-      '<label><span class="qnum">' + (i+1) + '</span>這句是什麼情況用的' +
-      (persona.examples.length > 1 ? '<button class="del" style="float:right;font-weight:400" onclick="wExDel(' + i + ')">刪除</button>' : '') +
-      '</label>' +
-      '<input class="inp" style="margin-bottom:8px" value="' + esc(x.note) + '" oninput="wEx(' + i + ',\'note\',this.value)" ' +
-        'placeholder="例：輪播貼文封面、限動問句">' +
-      '<textarea class="inp" oninput="wEx(' + i + ',\'text\',this.value)" ' +
-        'placeholder="把那句話原封不動貼進來">' + esc(x.text) + '</textarea>' +
-    '</div>').join('');
-
-  return hHead(hEye(10), '你自己的數據，比任何範本都準',
-      '打開 IG 洞察報告，把互動最高和最低的兩則找出來。AI 拿到這組對照，就能分析出你的受眾到底吃哪一套，而不是給你誰都能用的罐頭鉤子。') +
-
-    '<div class="warn hot" style="margin-bottom:22px"><span>📊</span><div>' +
-      '<b>怎麼找：</b>IG →「洞察報告」→「你分享的內容」→ 依<b>觸及</b>或<b>儲存</b>排序，' +
-      '看最上面那則和最下面那則，把它們的<b>封面第一句話</b>打進來就好。</div></div>' +
-
-    '<div class="gq">' +
-      '<label><span class="qnum" style="background:#DCEBD8;color:#4A6B41">✓</span>你目前<b>流量最好</b>的那則，封面第一句是什麼？</label>' +
-      '<textarea class="inp" oninput="wSet(\'bestLine\',this.value)" ' +
-        'placeholder="例：我媽拐我去學接睫毛，我卻在那裡找到了自己">' + esc(persona.bestLine || '') + '</textarea>' +
-      '<input class="inp" style="margin-top:8px" value="' + esc(persona.bestData || '') + '" oninput="wSet(\'bestData\',this.value)" ' +
-        'placeholder="數據多少？（選填）例：觸及 1.2 萬、儲存 340">' +
-    '</div>' +
-
-    '<div class="gq">' +
-      '<label><span class="qnum" style="background:#F0D9D2;color:#9C4B32">✕</span>反過來，<b>流量最差</b>的那則，封面第一句是什麼？</label>' +
-      '<div class="hint" style="margin:-2px 0 8px">這句一樣重要。AI 會拿它跟上面那句對照，找出你的受眾為什麼滑掉。</div>' +
-      '<textarea class="inp" oninput="wSet(\'worstLine\',this.value)" ' +
-        'placeholder="例：本月新品上架，歡迎詢問">' + esc(persona.worstLine || '') + '</textarea>' +
-    '</div>' +
-
-    '<div style="margin-top:24px;padding-top:22px;border-top:1px solid var(--line)">' +
-      '<div class="h2" style="font-size:14px;margin-bottom:4px">其他你喜歡的句子（選填）</div>' +
-      '<div class="hint" style="margin-bottom:14px">還有哪些寫法你自己很滿意？多給幾句，語感會更準。</div>' +
-      rows +
-      '<button class="add-row" style="margin-top:14px" onclick="wExAdd()">＋ 再加一句範例</button>' +
-    '</div>' +
-
-    '<div style="margin-top:24px;padding-top:22px;border-top:1px solid var(--line)">' +
-      hText('上次哪個版本讓你覺得不對？', '寫下來，AI 會避開同樣的問題。', 'pastFail',
-            '例：之前請 AI 直接生「為什麼你的臉總是又乾又緊繃」，太像廣告詞不像我會說的話', true) +
-    '</div>' +
-    hNav();
-}
-function wiz11(){
-  return hHead(hEye(11), '內容目標', '讀者看完你的內容後，你希望他做什麼？這會決定每一篇的結尾怎麼收。') +
-    hChips('讀者看完後的行動（可複選）', null, 'readerAction', true) +
-    hText('其他行動補充（選填）', null, 'readerActionOther', '例：報名體驗課、填寫預約表單') +
-    hText('預約／聯絡動線', 'AI 寫 CTA 時會直接把這個寫進去，不用你每次補。', 'booking',
+    hText('預約／聯絡動線（選填）', 'AI 寫結尾時會直接把這個寫進去，不用你每次補。', 'booking',
           '例：IG DM 或 LINE @jct4615L') +
-    hNav();
+    hNav('完成基礎定位 →');
 }
 
-function wiz12(){
-  const isLast = wizSeq().indexOf(13) < 0;
-  return hHead(hEye(12), '品牌關鍵詞（選填）',
-      '如果你有自創的方法論名稱、口頭禪或常用詞，寫在這裡；沒有也完全沒關係，可以先留空。') +
-    hText('品牌關鍵詞／自創術語', null, 'keywords',
-          '例：每月一次的自我修復、療癒手作風', true) +
-    hNav(isLast ? '產生我的人設指令 →' : '下一步');
-}
-
-function wiz13(){
-  const banHtml = AD_RULES.ban.map(g =>
-    '<div style="margin-bottom:12px"><b style="color:#9C4B32">🚫 ' + g[0] + '</b>' +
-    '<div style="font-size:12.5px;line-height:1.85;margin-top:3px">' + esc(g[1]) + '</div></div>').join('');
-  const okHtml = AD_RULES.ok.map(g =>
-    '<div style="margin-bottom:9px"><b style="color:#4A6B41">✓ ' + g[0] + '</b>' +
-    '<div style="font-size:12.5px;line-height:1.85;margin-top:3px">' + esc(g[1]) + '</div></div>').join('');
-
-  return hHead(hEye(13), '廣告用語提醒',
-      '你的身份／領域勾了美容或醫美相關。下面這份清單是衛生局的刊載須知，先看過再繼續——這整份會自動寫進你每一份指令裡，AI 會照著避開。') +
-
-    '<div class="rulebox">' +
-      '<div class="rulebox-h">不可刊登（會被開罰）</div>' + banHtml +
+/* 完成頁：不講「還剩幾關」，直接給兩條路 */
+function wiz6(){
+  return hHead('完成', '✦ 你的基礎 AI 定位完成了！',
+      '<p>AI 現在已經知道你是誰、做什麼、主要想吸引誰，以及你希望內容怎麼說話。</p>' +
+      '<p style="margin-top:8px">現在已經可以開始製作內容。如果你想讓 AI 更像你本人，可以之後再慢慢補充故事、經歷、案例與內容習慣。</p>') +
+    '<div class="wiz-nav" style="margin:0 0 28px">' +
+      '<button class="btn grow home-cta" onclick="go(\'gen\')">開始製作 →</button>' +
+      '<button class="btn ghost" onclick="wDeep()">讓 AI 更懂我 →</button>' +
     '</div>' +
-
-    '<div class="rulebox ok" style="margin-top:14px">' +
-      '<div class="rulebox-h" style="color:#4A6B41">可以改用這些說法</div>' + okHtml +
-    '</div>' +
-
-    '<div class="rulebox" style="margin-top:14px">' +
-      '<div class="rulebox-h">連店名／館名也受規範</div>' +
-      '<div style="font-size:12.5px;line-height:1.9">' +
-        '<b style="color:#9C4B32">🚫 不可用：</b>' + esc(AD_RULES.nameBad.join('、')) + '<br>' +
-        '<b style="color:#4A6B41">✓ 可以用：</b>' + esc(AD_RULES.nameOk.join('、')) +
-      '</div>' +
-    '</div>' +
-
-    '<div class="warn hot" style="margin-top:16px"><span>☎️</span><div>' +
-      '<b>有任何疑義，直接打電話問當地衛生局</b>，不要相信網路上流傳的版本。這份清單是給 AI 當防呆用的，最終責任還是在刊登的人身上。</div></div>' +
-
-    '<label class="cbrow" style="margin-top:18px"><input type="checkbox"' + (persona.complianceAck ? ' checked' : '') +
-      ' onchange="wCheck(\'complianceAck\',this.checked)">我知道了，之後生成內容時會避開這些字眼</label>' +
-    '<div class="hint" style="margin-top:10px">不管有沒有勾，只要身份／領域選了美容或醫美相關，這份清單都會自動寫進指令的【背景】裡。</div>' +
-    hNav('產生我的人設指令 →');
-}
-function wiz14(){
-  return hHead('完成', '你的人設建立完成了！✓',
-      '之後產生 AI 指令時，系統會自動帶入這份人設，你不用每次重新介紹自己。') +
-    '<div class="wiz-nav" style="margin:0 0 26px"><button class="btn grow home-cta" onclick="go(\'gen\')">開始產生第一組 AI 指令 →</button></div>' +
-    '<div style="font-size:12.5px;color:var(--gray);line-height:1.7;margin-bottom:12px">下面兩份可以另外留著用：「GPT 人設指令」是要貼給 ChatGPT／Claude 的，貼上之後它就會記得你；「人設卡」是給你自己或學生對照用的摘要。</div>' +
+    '<div class="h2" style="font-size:14px;margin-bottom:4px">你的人設指令</div>' +
+    '<div style="font-size:12.5px;color:var(--gray);line-height:1.7;margin-bottom:12px">「GPT 人設指令」可以直接貼給 ChatGPT、Claude、Gemini 等 AI，貼上之後它就會記得你；「人設卡」是給你自己對照用的摘要。之後在「讓 AI 更懂我」補充的資料，也會自動加進來。</div>' +
     '<div class="otabs">' +
       '<button class="otab' + (wizTab === 'gpt' ? ' on' : '') + '" onclick="wTabSet(\'gpt\')">GPT 人設指令</button>' +
       '<button class="otab' + (wizTab === 'card' ? ' on' : '') + '" onclick="wTabSet(\'card\')">人設卡摘要</button>' +
@@ -2628,16 +2605,146 @@ function wiz14(){
       '<button class="btn grow" onclick="wCopyOut()">複製這段文字</button>' +
       '<button class="btn ghost" onclick="wSaveOut()">存進指令庫</button>' +
     '</div>' +
-    '<div class="note-box"><b>下一步：</b>按「開始製作」。你剛填的<b>角色</b>和<b>背景</b>會自動貼在每一份指令最前面，' +
-      '你只要回答「今天要做什麼」，剩下的系統幫你組好。</div>' +
     '<div class="wiz-nav">' +
       '<button class="btn ghost" onclick="wPrev()">回上一步修改</button>' +
       '<button class="btn ghost" onclick="wReset()">清空重新填</button>' +
-      '<button class="btn grow" onclick="go(\'gen\')">去開始製作 →</button>' +
     '</div>';
 }
 
-const WIZ_BODY = [wiz0,wiz1,wiz2,wiz3,wiz4,wiz5,wiz6,wiz7,wiz8,wiz9,wiz10,wiz11,wiz12,wiz13,wiz14];
+const WIZ_BODY = [wiz0,wiz1,wiz2,wiz3,wiz4,wiz5,wiz6];
+
+/* ==================================================================
+   讓 AI 更懂我（全部選填）
+   原本 13 關裡「有價值但第一次不用填」的題目都搬到這裡，欄位名稱沒變，舊資料直接顯示。
+   ================================================================== */
+
+/* 之後「月計畫」要用的資料：新使用者不問；舊版填過的人才顯示，看得到也改得到，
+   不然資料藏起來卻還在影響指令，使用者會不知道為什麼 */
+function hasMonthlyData(p){
+  const t = v => (typeof v === 'string' ? v : '').trim();
+  return (p.qa||[]).some(x => t(x.q) || t(x.a)) || !!t(p.bestLine) || !!t(p.bestData) || !!t(p.worstLine) ||
+         (p.readerAction||[]).length > 0 || !!t(p.readerActionOther);
+}
+
+/* 右上角那條進度：這頁補了多少（純顯示，不是必填） */
+function deepFill(){
+  const p = persona, t = v => (typeof v === 'string' ? v : '').trim();
+  const checks = [
+    t(p.storyBefore) || t(p.storyTurning) || t(p.storyResult),
+    t(p.strengths), t(p.weaknesses), t(p.positioning), t(p.customTraits), t(p.hobbies),
+    t(p.firstMessage), t(p.desiredChange),
+    (p.offers||[]).slice(1).some(o => t(o.name) || t(o.desc)),
+    (p.examples||[]).some(x => t(x.text)), t(p.pastFail), t(p.keywords), t(p.toneNote)
+  ];
+  return Math.round(checks.filter(Boolean).length / checks.length * 100);
+}
+
+function wizDeepBody(){
+  const p = persona;
+  if(!p.offers.length) p.offers.push({name:'', desc:'', price:''});
+  const sec = (title, desc, inner) =>
+    '<div class="deep-sec"><div class="deep-h">' + title + '</div>' +
+    (desc ? '<div class="deep-d">' + desc + '</div>' : '') + inner + '</div>';
+
+  const mainTxt = offerText(p.offers[0]);
+  const offerRows = p.offers.map((o, i) => i === 0 ? '' :
+    '<div class="gq">' +
+      '<label><span class="qnum">' + i + '</span>其他服務／產品' +
+        '<button class="del" style="float:right;font-weight:400" onclick="wOfferDel(' + i + ')">刪除</button></label>' +
+      '<input class="inp" style="margin-bottom:8px" value="' + esc(o.name || '') + '" oninput="wOffer(' + i + ',\'name\',this.value)" placeholder="服務／產品名稱">' +
+      '<textarea class="inp" style="margin-bottom:8px" oninput="wOffer(' + i + ',\'desc\',this.value)" placeholder="它可以幫助什麼樣的人，解決什麼問題？">' + esc(o.desc || '') + '</textarea>' +
+      '<input class="inp" value="' + esc(o.price || '') + '" oninput="wOffer(' + i + ',\'price\',this.value)" placeholder="價格（選填）">' +
+    '</div>').join('');
+
+  const exRows = (p.examples||[]).map((x, i) =>
+    '<div class="gq">' +
+      '<label><span class="qnum">' + (i+1) + '</span>這句是什麼情況用的' +
+      (p.examples.length > 1 ? '<button class="del" style="float:right;font-weight:400" onclick="wExDel(' + i + ')">刪除</button>' : '') +
+      '</label>' +
+      '<input class="inp" style="margin-bottom:8px" value="' + esc(x.note) + '" oninput="wEx(' + i + ',\'note\',this.value)" ' +
+        'placeholder="例：輪播貼文封面、限動問句">' +
+      '<textarea class="inp" oninput="wEx(' + i + ',\'text\',this.value)" ' +
+        'placeholder="把那句話原封不動貼進來">' + esc(x.text) + '</textarea>' +
+    '</div>').join('');
+
+  let monthly = '';
+  if(hasMonthlyData(p)){
+    const qaRows = (p.qa||[]).map((x, i) =>
+      '<div class="gq">' +
+        '<label><span class="qnum">' + (i+1) + '</span>客戶最常問的問題' +
+        (p.qa.length > 1 ? '<button class="del" style="float:right;font-weight:400" onclick="wQaDel(' + i + ')">刪除</button>' : '') +
+        '</label>' +
+        '<input class="inp" style="margin-bottom:8px" value="' + esc(x.q) + '" oninput="wQa(' + i + ',\'q\',this.value)" ' +
+          'placeholder="例：做臉多久做一次才有效？">' +
+        '<textarea class="inp" oninput="wQa(' + i + ',\'a\',this.value)" ' +
+          'placeholder="你平常怎麼回答？">' + esc(x.a) + '</textarea>' +
+      '</div>').join('');
+    monthly = sec('📅 之後「月計畫」會用到的資料',
+      '這些是你之前填過的，已經幫你保留，指令裡也會照常帶入。之後的「月計畫」會用到，現在可以先不用管。',
+      qaRows +
+      '<button class="add-row" style="margin:4px 0 18px" onclick="wQaAdd()">＋ 再加一組問答</button>' +
+      hText('流量最好的那則，封面第一句', null, 'bestLine', '例：我媽拐我去學接睫毛，我卻在那裡找到了自己', true) +
+      hText('那則的數據（選填）', null, 'bestData', '例：觸及 1.2 萬、儲存 340') +
+      hText('流量最差的那則，封面第一句', null, 'worstLine', '例：本月新品上架，歡迎詢問', true) +
+      hChips('讀者看完後的行動（可複選）', null, 'readerAction', true) +
+      hText('其他行動補充（選填）', null, 'readerActionOther', '例：報名體驗課、填寫預約表單'));
+  }
+
+  return hHead('全部選填', '✦ 讓 AI 更懂我',
+      '這些都是選填。有空再慢慢補就好，補得越完整，AI 越容易掌握你的故事、個性與說話方式。') +
+    '<div style="margin:-8px 0 4px"><button class="del" onclick="wDeepBack()">← 回去</button></div>' +
+
+    sec('【我的故事】', null,
+      '<div class="warn hot" style="margin-bottom:18px"><span>💭</span><div><b>為什麼問這個？</b><br>' +
+        '你的過去也是現在人設故事的一部分。AI 越了解你怎麼走到今天，之後在協助你整理故事、經歷與內容時，就越容易貼近你本人。</div></div>' +
+      hGuide(1, '開始做現在這件事之前，你的生活或工作是什麼樣子？', 'storyBefore',
+             '例：一直是美業工作室老闆，那時候完全沒在經營社群') +
+      hGuide(2, '發生了什麼事、或什麼契機，讓你決定開始？', 'storyTurning',
+             '例：看到同行靠自媒體招到客人，加上店裡員工要養，決定報名學習') +
+      hGuide(3, '具體的成果是什麼？盡量講數字或明確例子，越具體越有說服力', 'storyResult',
+             '例：學習 3 個月後，第一個月業績就成長了一萬元')) +
+
+    sec('【真實的我】', null,
+      hText('我的優點', '可以轉化成「為什麼要信任我」的內容。', 'strengths',
+            '例：很有耐心、會先鼓勵再糾正，客人不會害怕問問題', true) +
+      hText('我的缺點', '可以轉化成「真實不完美」的內容，拉近距離。', 'weaknesses',
+            '例：一開始很怕鏡頭、常常拖延不敢發第一篇', true) +
+      hText('一句話定位', '公式：我是幫（誰）做到（什麼結果）的（身分）。', 'positioning',
+            '例：中壢在地、療癒手作風的美業工作室') +
+      hText('自訂特質', '上面沒有的形容詞，或朋友、學生形容你的用詞。', 'customTraits',
+            '例：龜毛、很會安慰人、講話很直但不傷人') +
+      hText('工作以外，你平常還喜歡什麼？', '這些生活面可以幫助 AI 找到更多貼近你的個人 IP 題材。', 'hobbies',
+            '例：育兒、旅行、咖啡、閱讀、健身、追劇、寵物……', true)) +
+
+    sec('【更了解我的受眾】', null,
+      hGuide(1, '如果他們鼓起勇氣私訊你，第一句話通常會怎麼打？', 'firstMessage',
+             '例：想請問一下你們的療程費用大概多少？') +
+      hGuide(2, '他們最渴望的改變，用一句話講是什麼？', 'desiredChange',
+             '例：每個月有一次真正放鬆、被好好照顧的時間')) +
+
+    sec('【我的完整服務】', '基礎定位只記 1 個主要服務；這裡可以繼續新增其他服務／產品（最多共 5 項）。',
+      '<div class="deep-main"><b>主要服務：</b>' + (mainTxt ? esc(mainTxt) : '還沒寫') +
+        '　<button class="del" onclick="wGo(3)">到 STEP 3 修改</button></div>' +
+      offerRows +
+      (p.offers.length < 5 ? '<button class="add-row" onclick="wOfferAdd()">＋ 新增其他服務／產品</button>' : '')) +
+
+    sec('【更像我的語感】', null,
+      '<div class="h2" style="font-size:13.5px;margin-bottom:4px">其他你喜歡的句子</div>' +
+      '<div style="font-size:12.5px;color:var(--gray);margin-bottom:12px">還有哪些寫法你自己很滿意？多給幾句，語感會更準。</div>' +
+      exRows +
+      '<button class="add-row" style="margin:4px 0 18px" onclick="wExAdd()">＋ 再加一句範例</button>' +
+      hText('上次哪個版本讓你覺得不對？', '寫下來，AI 會避開同樣的問題。', 'pastFail',
+            '例：之前請 AI 直接生「為什麼你的臉總是又乾又緊繃」，太像廣告詞不像我會說的話', true) +
+      hText('品牌關鍵詞／自創術語', null, 'keywords', '例：每月一次的自我修復、療癒手作風', true) +
+      hText('其他語氣補充', null, 'toneNote', '例：可以保留一點行動呼籲的急迫感，但不要太溫吞；不要用驚嘆號', true)) +
+
+    monthly +
+
+    '<div class="wiz-nav">' +
+      '<button class="btn ghost" onclick="wDeepBack()">先這樣，回去</button>' +
+      '<button class="btn grow" onclick="go(\'gen\')">開始製作 →</button>' +
+    '</div>';
+}
 
 /* ---- 產出 ---- */
 function wTabSet(t){ wizTab = t; renderWizard(); }
@@ -2662,52 +2769,55 @@ function buildPersonaPrompt(){
     roleBlock(),
     bgBlock(),
     exBlock(),
+    /* 只填 5 關的人可能沒有「絕對不要出現的語氣」，那條規則就不要出現，編號跟著往前補 */
     '【使用規則】\n' + [
-      '1. 從現在開始，這個對話裡我請你寫的所有文案、腳本、貼文、回覆，都要遵守上面的角色與背景，不要自己發明新的語氣或設定。',
-      '2. 每次動筆前，先確認我要哪一種格式（IG 貼文、限時動態、Reels 腳本、海報文案、客戶回覆⋯⋯）。',
-      '3. 絕對不要使用【背景】裡「絕對不要出現的語氣」清單裡的說法。',
-      '4. 全程用台灣人日常會說的繁體中文，不要出現簡體字與中國用語。',
-      (exBlock() ? '5. 寫完自己檢查一次：這段話像不像【範例】裡那個人寫的？太通用、太有 AI 味就重寫。'
-                 : '5. 寫完自己檢查一次：有沒有太通用、太有 AI 味？有的話就照【背景】裡我的個性與說話節奏重寫。'),
-      '6. 我給的資訊不夠就直接問我，不要自己編故事或編數字。'
-    ].join('\n'),
+      '從現在開始，這個對話裡我請你寫的所有文案、腳本、貼文、回覆，都要遵守上面的角色與背景，不要自己發明新的語氣或設定。',
+      '每次動筆前，先確認我要哪一種格式（IG 貼文、限時動態、Reels 腳本、海報文案、客戶回覆⋯⋯）。',
+      ((persona.bannedTone||[]).length ? '絕對不要使用【背景】裡「絕對不要出現的語氣」清單裡的說法。' : null),
+      '全程用台灣人日常會說的繁體中文，不要出現簡體字與中國用語。',
+      (exBlock() ? '寫完自己檢查一次：這段話像不像【範例】裡那個人寫的？太通用、太有 AI 味就重寫。'
+                 : '寫完自己檢查一次：有沒有太通用、太有 AI 味？有的話就照【背景】裡我的個性與說話節奏重寫。'),
+      '我給的資訊不夠就直接問我，不要自己編故事或編數字。'
+    ].filter(Boolean).map((x, i) => (i + 1) + '. ' + x).join('\n'),
     '記住了就回我「準備好了」，然後等我告訴你今天要做什麼。'
   ].filter(Boolean).join('\n\n');
 }
 
 function buildPersonaCard(){
   const p = persona;
-  const g = a => (a||[]).join('、') || '—';
+  const g = a => (a||[]).join('、');
   const L = [];
+  /* 只輸出有資料的欄位，不塞「—」「未填」這類佔位字 */
+  const put = (k, v) => { const s = tx(v); if(s) L.push(k + '：' + s); };
+  const gap = () => { if(L.length && L[L.length - 1] !== '') L.push(''); };
   L.push('〔人設卡｜' + (p.label || p.nickname || '未命名') + '〕');
   L.push('');
   L.push('【角色】' + (tx(p.aiRole) || suggestRole()));
-  L.push('');
-  L.push('帳號：' + (p.handle || '—'));
-  L.push('定位：' + (p.positioning || '—'));
-  L.push('專業：' + (tx(p.expertise) || '—'));
-  L.push('身份／領域：' + (identityText(p) || '—'));
-  L.push('');
-  L.push('特質：' + [g(p.commStyle), g(p.contentEnergy), g(p.interactStyle)].filter(x => x !== '—').join(' ／ '));
-  if(p.customTraits) L.push('補充：' + p.customTraits);
-  L.push('語氣：' + (p.toneRhythm || '—'));
-  L.push('避免：' + g(p.bannedTone));
-  if(p.pastFail) L.push('踩過的雷：' + tx(p.pastFail));
-  L.push('');
-  L.push('受眾：' + (p.ageRange || '—') + '｜' + g(p.audienceType) + (p.audienceOther ? '、' + p.audienceOther : ''));
-  if(p.painPoint) L.push('困擾：' + p.painPoint);
-  if(p.desiredChange) L.push('渴望的改變：' + p.desiredChange);
-  L.push('');
-  const story = [p.storyBefore, p.storyTurning, p.storyResult].filter(Boolean);
-  L.push('故事：' + (story.length ? story.map(tx).join(' → ') : '—'));
-  if(p.strengths) L.push('優點：' + tx(p.strengths));
-  if(p.weaknesses) L.push('缺點：' + tx(p.weaknesses));
-  L.push('');
-  const off = (p.offers||[]).filter(o => o.name || o.desc);
-  L.push('服務：' + (off.length ? off.map(o => (o.name || '（未命名）') + (o.desc ? '（' + o.desc + '）' : '')).join('、') : '—'));
-  L.push('目標行動：' + g(p.readerAction) + (p.readerActionOther ? '、' + p.readerActionOther : ''));
-  L.push('預約動線：' + (p.booking || '—'));
-  if(p.keywords) L.push('關鍵詞：' + tx(p.keywords));
+  gap();
+  put('帳號', p.handle);
+  put('定位', p.positioning);
+  put('專業', p.expertise);
+  put('身份／領域', identityText(p));
+  gap();
+  put('特質', [g(p.commStyle), g(p.contentEnergy), g(p.interactStyle)].filter(Boolean).join(' ／ '));
+  put('補充', p.customTraits);
+  put('語氣', p.toneRhythm);
+  put('避免', g(p.bannedTone));
+  put('踩過的雷', p.pastFail);
+  gap();
+  put('受眾', [p.ageRange, [g(p.audienceType), tx(p.audienceOther)].filter(Boolean).join('、')].filter(Boolean).join('｜'));
+  put('困擾', p.painPoint);
+  put('渴望的改變', p.desiredChange);
+  gap();
+  put('故事', [p.storyBefore, p.storyTurning, p.storyResult].map(tx).filter(Boolean).join(' → '));
+  put('優點', p.strengths);
+  put('缺點', p.weaknesses);
+  put('工作以外喜歡', p.hobbies);
+  gap();
+  put('服務', (p.offers||[]).map(offerText).filter(Boolean).join('、'));
+  put('目標行動', [g(p.readerAction), tx(p.readerActionOther)].filter(Boolean).join('、'));
+  put('預約動線', p.booking);
+  put('關鍵詞', p.keywords);
   const qa = (p.qa||[]).filter(x => (x.q||'').trim());
   if(qa.length){
     L.push('');
@@ -2725,31 +2835,39 @@ function buildPersonaCard(){
     L.push('我喜歡的句子：');
     ex.forEach(x => L.push('  ・' + tx(x.text)));
   }
+  while(L.length && L[L.length - 1] === '') L.pop();
   return L.join('\n');
 }
 
 /* ---- 繪製 ---- */
 function renderWizard(){
-  const seq = wizSeq();
-  if(seq.indexOf(persona.step) < 0){
-    const back = seq.filter(x => x <= persona.step);
-    persona.step = back.length ? back[back.length - 1] : 0;
+  /* 從最近刪除還原、或其他沒經過開檔遷移的舊人設：畫之前補轉一次（關卡編號、身份複選），內容不動 */
+  if(persona.schemaV !== 3 || persona.identityV !== 1){
+    migrateSteps(persona); migrateIdentity(persona); save();
   }
-  /* 進度存著，但沒按過「開始打底」之前一律顯示首頁 */
+  if(!(persona.step >= 0 && persona.step <= BASIC_TOTAL + 1)) persona.step = 0;
+  /* 進度存著，但沒按過開始之前一律顯示首頁 */
   const shown = wizEntered ? persona.step : 0;
+  const deep = wizEntered && wizDeep;
 
   const root = document.getElementById('wizRoot');
-  root.innerHTML = WIZ_BODY[shown]();
+  root.innerHTML = deep ? wizDeepBody() : WIZ_BODY[shown]();
   root.classList.remove('wiz-card');
   void root.offsetWidth;
   root.classList.add('wiz-card');
 
-  const vi = seq.indexOf(shown), total = seq.length - 1;
-  const pct = shown === 0 ? 0 : Math.round(vi / total * 100);
+  let pct, lbl, tag;
+  if(deep){
+    pct = deepFill(); lbl = '讓 AI 更懂我（選填）'; tag = '選填';
+  } else {
+    pct = Math.round(Math.min(shown, BASIC_TOTAL) / BASIC_TOTAL * 100);
+    lbl = WIZ_LABEL[shown];
+    tag = shown === 0 ? '開始' : (shown > BASIC_TOTAL ? '完成' : 'STEP ' + shown + ' / ' + BASIC_TOTAL);
+  }
   document.getElementById('wizFill').style.width = pct + '%';
-  document.getElementById('wizL').textContent = WIZ_LABEL[shown];
+  document.getElementById('wizL').textContent = lbl;
   document.getElementById('wizR').textContent = pct + '%';
-  document.getElementById('wizTag').textContent = shown === 0 ? '開始' : ('STEP ' + vi + ' / ' + total);
+  document.getElementById('wizTag').textContent = tag;
   renderPersonaBar();
   renderHome();
 }
@@ -2765,16 +2883,18 @@ function renderHome(){
   el.style.display = '';
 
   const sc = personaScore(), saved = savedStepNo();
+  const bsc = basicScoreOf(persona);
   const name = esc(personaName(persona));
   let status = '', cta;
-  if(sc >= 60){
-    status = '<div class="home-status">你的人設已建立 ✓<span>目前使用「' + name + '」，完成度 ' + sc + '%</span></div>';
+  if(personaReady(persona)){
+    status = '<div class="home-status">你的人設已建立 ✓<span>目前使用「' + name + '」的基礎 AI 定位</span></div>';
     cta = '<button class="btn home-cta" onclick="go(\'gen\')">開始製作 →</button>' +
-          '<button class="btn ghost" onclick="wStart()">修改我的人設</button>';
+          '<button class="btn ghost" onclick="wDeep()">讓 AI 更懂我</button>' +
+          '<button class="btn ghost" onclick="wStart()">修改基礎定位</button>';
   } else if(sc > 0 || saved){
-    status = '<div class="home-status mid">「' + name + '」已經填到 ' + sc + '%' +
-             '<span>再補一些，產生的指令才會比較像你本人</span></div>';
-    cta = '<button class="btn home-cta" onclick="wStart()">繼續建立我的人設 →</button>' +
+    status = '<div class="home-status mid">「' + name + '」的基礎定位已經填到 ' + bsc + '%' +
+             '<span>不用全部填完，先走完 5 關就能開始使用</span></div>';
+    cta = '<button class="btn home-cta" onclick="wStart()">繼續建立我的定位 →</button>' +
           '<button class="btn ghost" onclick="go(\'gen\')">先去開始製作</button>';
   } else {
     cta = '<button class="btn home-cta" onclick="wStart()">第一次使用？先建立我的人設 →</button>';
@@ -2828,6 +2948,7 @@ function refreshPersonaUI(){
   /* 換了人設（切換／新增／複製／刪除／匯入／清空）就回到該組的首頁，
      不要直接跳進別組人設填到一半的第 N 步 */
   wizEntered = false;
+  wizDeep = false;
   renderPersonaBar();
   renderGenBar();
   renderWizard();
@@ -2904,7 +3025,7 @@ function renderPersonaBar(){
   if(!el) return;
   const chips = pList.map(p =>
     '<button class="pchip' + (p.id === pActive ? ' on' : '') + '" onclick="switchPersona(\'' + esc(p.id) + '\')">' +
-      '<b>' + esc(personaName(p)) + '</b><span>' + scoreOf(p) + '%</span>' +
+      '<b>' + esc(personaName(p)) + '</b><span>' + (personaReady(p) ? '基礎 ✓' : basicScoreOf(p) + '%') + '</span>' +
     '</button>').join('');
   el.innerHTML =
     '<div class="pbar-h"><span>人設檔案</span>' +
@@ -2924,7 +3045,7 @@ function renderGenBar(){
   if(!el) return;
   const opts = pList.map(p =>
     '<option value="' + esc(p.id) + '"' + (p.id === pActive ? ' selected' : '') + '>' +
-    esc(personaName(p)) + '（' + scoreOf(p) + '%）</option>').join('');
+    esc(personaName(p)) + '（' + (personaReady(p) ? '基礎定位 ✓' : '基礎 ' + basicScoreOf(p) + '%') + '）</option>').join('');
   el.innerHTML =
     '<div class="gbar">' +
       '<span class="gbar-k">◈ 目前套用的人設</span>' +
@@ -2954,10 +3075,11 @@ function renderGen(){
   document.getElementById('genDesc').textContent = t.desc;
 
   const sc = personaScore();
-  document.getElementById('personaWarn').innerHTML = sc < 60
-    ? '<div class="warn" style="margin-bottom:20px"><span>⚠️</span><div><b>「' + esc(personaName(persona)) + '」目前只填了 ' + sc + '%。</b>' +
-      '現在就算開始製作，AI 也不認識你，出來的東西會很通用。' +
-      '<button class="btn sm" style="margin-left:8px" onclick="go(\'persona\')">先去填人設</button></div></div>'
+  /* 跟首頁「已建立 ✓」、完成提示同一個標準：基礎定位 5 關 */
+  document.getElementById('personaWarn').innerHTML = !personaReady(persona)
+    ? '<div class="warn" style="margin-bottom:20px"><span>⚠️</span><div><b>「' + esc(personaName(persona)) + '」的基礎定位還沒完成（' + basicScoreOf(persona) + '%）。</b>' +
+      '不用全部填完，先把 5 關基礎定位走完，AI 才認識你，出來的東西才不會太通用。' +
+      '<button class="btn sm" style="margin-left:8px" onclick="go(\'persona\')">去完成基礎定位</button></div></div>'
     : '';
 
   genState[gkey()] = genState[gkey()] || {};
@@ -3032,7 +3154,7 @@ function renderOut(){
       f.req && (!f.showIf || f.showIf(gs)) && !String(gs[f.k] || '').trim());
     const copyBtn = '<button class="btn gen-copy" onclick="copyOut()">複製 AI 指令</button>' +
       '<span class="gen-hint">複製後貼到你想使用的 AI，就可以繼續生成內容。</span>';
-    doneEl.innerHTML = missing.length ? '' : (personaScore() >= 60
+    doneEl.innerHTML = missing.length ? '' : (personaReady(persona)
       ? '<div class="gen-done"><b>你的專屬 AI 指令已整理完成 ✦</b>' +
         '<span>這份指令已經自動帶入你的定位、人設與這次的需求。</span>' + copyBtn + '</div>'
       : '<div class="gen-done mid"><b>你的專屬 AI 指令已整理完成 ✦</b>' +
@@ -3337,10 +3459,10 @@ function cleanPersona(x){
     else if(typeof d === 'number')  p[k] = (typeof x[k] === 'number' && isFinite(x[k])) ? x[k] : d;
     else if(Array.isArray(d))       p[k] = sList(x[k]);
   });
-  p.offers   = sPairs(x.offers,   ['name','desc']);
+  p.offers   = sPairs(x.offers,   ['name','desc','price']);
   p.qa       = sPairs(x.qa,       ['q','a']);
   p.examples = sPairs(x.examples, ['note','text']);
-  if(!p.offers.length)   p.offers   = [{name:'',desc:''}];
+  if(!p.offers.length)   p.offers   = [{name:'',desc:'',price:''}];
   if(!p.qa.length)       p.qa       = [{q:'',a:''}];
   if(!p.examples.length) p.examples = [{note:'',text:''}];
   p.id = safeId(x.id, pid);
@@ -3349,7 +3471,8 @@ function cleanPersona(x){
   /* 最後編輯時間。不能用 sNum()——它在沒有值的時候會回 Date.now()，
      那樣舊備份匯進來會被當成最新的。沒有就是 0。 */
   p.updatedAt = (typeof x.updatedAt === 'number' && isFinite(x.updatedAt) && x.updatedAt > 0) ? x.updatedAt : 0;
-  if(x.schemaV === 2) p.schemaV = 2;   /* 舊備份沒這欄，留給 migratePersona 轉關卡 */
+  /* 沒有這欄（v1）或是 2（13 關）的舊備份，留給 migratePersona 轉成 5 關的編號；3 就原樣保留 */
+  if(x.schemaV === 2 || x.schemaV === 3) p.schemaV = x.schemaV;
   return p;
 }
 function cleanRecord(r){
