@@ -339,6 +339,26 @@ select.inp{appearance:none;padding-right:34px}
 .gen-done b{display:block;font-size:14px}
 .gen-done span{display:block;font-size:12.5px;color:var(--medium);margin-top:2px;line-height:1.7}
 
+.gen-done .gen-copy{margin-top:10px}
+.gen-done .gen-hint{font-size:12px;color:var(--gray);margin-top:6px}
+
+/* 開始製作頁上方的用途說明：講清楚最後拿到的是 AI 指令。刻意用柔和底色，不做成警告 */
+.gen-intro{padding:20px 22px;margin-bottom:20px}
+.gi-lead{font-size:15px;font-weight:700;line-height:1.7;color:var(--dark)}
+.gi-d{font-size:13.5px;color:var(--medium);line-height:1.8;margin-top:6px}
+.gi-flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 6px;margin:14px 0}
+.gi-step{font-size:12.5px;padding:5px 12px;border-radius:99px;background:var(--bg);border:1px solid var(--line);color:var(--medium);white-space:nowrap}
+.gi-step.on{background:var(--orange-light);border-color:var(--orange-soft);color:var(--dark);font-weight:700}
+.gi-step.out{border-style:dashed}
+.gi-arr{font-size:12px;color:var(--gray)}
+.gi-note{font-size:12.5px;color:var(--medium);line-height:1.75;background:var(--olive-light);border-radius:11px;padding:10px 13px}
+.gi-note b{color:var(--dark)}
+@media(max-width:760px){
+  .gen-intro{padding:16px 16px}
+  .gi-lead{font-size:14.5px}
+  .gen-done .gen-copy{width:100%}
+}
+
 /* 選單圖示（側邊與手機底部共用同一組線條 SVG，顏色跟著文字走） */
 .nav button i svg,.mnav button i svg{display:block;width:20px;height:20px;margin:0 auto}
 .home-d{font-size:15px;color:var(--medium);line-height:1.85;margin-bottom:20px}
@@ -537,8 +557,21 @@ select.inp{appearance:none;padding-right:34px}
       <div class="head">
         <div>
           <div class="h1">今天想做什麼？</div>
-          <div class="sub">選一種內容、回答幾個問題就好，你的定位與人設資料會自動帶入。</div>
         </div>
+      </div>
+
+      <!-- 真人盲測：有人以為這裡會直接生出貼文或圖片。先講清楚最後拿到的是「AI 指令」 -->
+      <div class="card gen-intro">
+        <p class="gi-lead">AI 做不出你想要的，不一定是 AI 不夠厲害，可能只是它還不知道你真正要什麼。</p>
+        <p class="gi-d">這裡會透過幾個簡單問題，幫你把腦中的想法說得更清楚，再自動帶入你的人設定位，整理成一份專屬 AI 指令。</p>
+        <div class="gi-flow">
+          <span class="gi-step">你的想法</span><span class="gi-arr">→</span>
+          <span class="gi-step">回答幾個問題</span><span class="gi-arr">→</span>
+          <span class="gi-step">加入你的人設定位</span><span class="gi-arr">→</span>
+          <span class="gi-step on">產生專屬 AI 指令</span><span class="gi-arr">→</span>
+          <span class="gi-step out">複製到你想使用的 AI</span>
+        </div>
+        <div class="gi-note"><b>這個版本產生的是「AI 指令」，不是直接在這裡生成最終圖片或貼文。</b><br>完成後，你可以把指令複製到 ChatGPT、Claude、Gemini 或其他適合的 AI 繼續生成。</div>
       </div>
 
       <div id="genPersonaBar"></div>
@@ -701,7 +734,9 @@ const DEF_PERSONA = {
   /* 【角色】要 AI 扮演誰 */
   aiRole:'',
   /* 基本 */
-  nickname:'', handle:'', positioning:'', expertise:'', industry:'',
+  nickname:'', handle:'', positioning:'', expertise:'',
+  /* 身份／領域（複選）。industry 是舊版單選的欄位，保留原值不刪，只在 migrateIdentity 讀一次 */
+  identities:[], identityOther:'', identityV:0, industry:'',
   /* 特質與語氣 */
   commStyle:[], contentEnergy:[], interactStyle:[], customTraits:'',
   toneRhythm:'', bannedTone:[], toneNote:'',
@@ -726,7 +761,7 @@ const DEF_PERSONA = {
 
 /* 精靈用的選項；wTag / wPick 一律用索引傳值，避免中文標點跑進 HTML 屬性 */
 const OPT = {
-  industry:['美業／醫美相關','心靈療癒／命理','教育／教學／內訓','電商／零售／實體服務','餐飲／食品','自媒體／內容創作','其他'],
+  identities:['美容／美睫／美甲／美髮','醫美相關','心靈療癒／命理','教育／教學／內訓','電商／零售／實體服務','餐飲／食品','自媒體／內容創作','其他'],
   commStyle:['溫暖鼓勵','直接坦率','理性條理','幽默風趣','感性細膩','犀利提醒','沉穩專業'],
   contentEnergy:['高能量、有活力','平靜療癒','知性思考','熱血激勵','溫柔陪伴'],
   interactStyle:['像朋友聊天','像老師教學','像顧問建議','像姊妹交流','保持一點神祕感'],
@@ -764,13 +799,58 @@ function migrateSteps(p){
   p.schemaV = 2;
   return true;
 }
+/* ---- 身份／領域：舊版「所屬產業別」單選 → 新版複選 ----
+   舊的 industry 字串原封不動留著；identityV 標記轉過了沒有，轉過就不再轉，
+   否則使用者把複選全部取消後，重整又會被舊值塞回來。 */
+const BEAUTY_IDS = ['美容／美睫／美甲／美髮', '醫美相關'];
+const LEGACY_BEAUTY = '美業／醫美相關';
+function legacyIdentities(ind){
+  const v = (typeof ind === 'string' ? ind : '').trim();
+  if(!v) return {list: [], other: ''};
+  /* 舊選項把美業跟醫美綁在一起。先轉成美容，不硬塞醫美；第 1 關會提醒做醫美的人自己加勾 */
+  if(v === LEGACY_BEAUTY) return {list: [BEAUTY_IDS[0]], other: ''};
+  if(OPT.identities.indexOf(v) > -1) return {list: [v], other: ''};
+  return {list: ['其他'], other: v};     /* 不認得的值不丟，放進「其他」的自行輸入 */
+}
+function migrateIdentity(p){
+  if(p.identityV === 1) return false;
+  if(!Array.isArray(p.identities)) p.identities = [];
+  if(typeof p.identityOther !== 'string') p.identityOther = '';
+  if(!p.identities.length && p.industry){
+    const m = legacyIdentities(p.industry);
+    p.identities = m.list;
+    if(m.other && !p.identityOther) p.identityOther = m.other;
+  }
+  p.identityV = 1;
+  return true;
+}
+/* 讀身份一律走這裡：還沒轉過的物件（例如剛從最近刪除還原的舊人設）也讀得到 */
+function identityList(p){
+  p = p || persona;
+  const a = Array.isArray(p.identities) ? p.identities.filter(x => typeof x === 'string' && x) : [];
+  if(a.length || p.identityV === 1) return a;
+  return legacyIdentities(p.industry).list;
+}
+function identityText(p){
+  p = p || persona;
+  /* 這支定義在 tx() 前面，自己 trim，不依賴後面才宣告的 const */
+  const own = (typeof p.identityOther === 'string' ? p.identityOther : '').trim().replace(/\n+/g, '；');
+  const other = own || (p.identityV === 1 ? '' : legacyIdentities(p.industry).other);
+  return identityList(p).map(x => (x === '其他' && other) ? '其他（' + other + '）' : x).join('、');
+}
+/* 廣告用語提醒（第 13 關、【背景】裡的禁用詞）：選了美容或醫美任一個就要 */
+function isBeautyLike(p){
+  return identityList(p || persona).some(x => BEAUTY_IDS.indexOf(x) > -1);
+}
+
 function migratePersona(){
-  let moved = 0, stepped = 0;
+  let moved = 0, stepped = 0, ided = 0;
   pList.forEach(p => {
     if(migrateOne(p)) moved++;
     if(migrateSteps(p)) stepped++;
+    if(migrateIdentity(p)) ided++;
   });
-  if(moved || stepped) save();
+  if(moved || stepped || ided) save();
   if(moved) toast('已把舊版人設搬到新的引導流程裡 ✓');
 }
 
@@ -786,6 +866,7 @@ function newPersona(label){
   p.label = label || '';
   p.createdAt = Date.now();
   p.schemaV = 2;   /* 新人設一出生就是新版關卡編號，不要再被 migrateSteps 轉一次 */
+  p.identityV = 1; /* 一出生就是複選格式 */
   return p;
 }
 function fillPersona(x){
@@ -1263,7 +1344,8 @@ function suggestRole(p){
   const who = p.nickname || p.label || '';
   const bits = [];
   bits.push('你是' + (who ? '「' + who + '」' : '我') + '的專屬內容寫手');
-  if(p.industry) bits.push('熟悉' + p.industry + '這一行');
+  const ids = identityText(p);
+  if(ids) bits.push('熟悉' + ids + (identityList(p).length > 1 ? '這些領域' : '這一行'));
   if(p.expertise) bits.push('專精' + tx(p.expertise));
   const tone = j(p.commStyle);
   if(tone) bits.push('文字風格' + tone);
@@ -1284,7 +1366,7 @@ function bgBlock(){
   const who = [p.handle, p.positioning].filter(Boolean).join('，');
   put('我的帳號／定位', who || p.nickname);
   put('我的專業', p.expertise);
-  if(p.industry) put('產業別', p.industry);
+  put('我的身份／領域', identityText(p));
 
   const aud = j(p.audienceType) + (p.audienceOther ? ((p.audienceType||[]).length ? '、' : '') + p.audienceOther : '');
   put('受眾', [p.ageRange, aud].filter(Boolean).join('，'));
@@ -1327,7 +1409,7 @@ function bgBlock(){
     });
   }
 
-  if(p.industry === '美業／醫美相關'){
+  if(isBeautyLike(p)){
     adRuleLines().forEach(x => L.push(x));
   }
 
@@ -2063,7 +2145,7 @@ const SCORE_CHECKS = [
   p => !!p.handle,
   p => !!p.positioning,
   p => !!p.expertise,
-  p => !!p.industry,
+  p => identityList(p).length > 0,
   p => (p.commStyle||[]).length > 0,
   p => (p.contentEnergy||[]).length > 0 || (p.interactStyle||[]).length > 0,
   p => !!p.ageRange || (p.audienceType||[]).length > 0,
@@ -2145,10 +2227,10 @@ let wizEntered = false;
 const WIZ_LABEL = ['開始之前','基本資料','AI 角色','特質勾選','目標受眾','你的故事','優點與缺點',
                    '語氣風格','主要服務','客戶問答','你的範例','內容目標','品牌關鍵詞','廣告用語提醒','完成'];
 
-/* 第 13 關（廣告用語）只有選了美業／醫美才會出現 */
+/* 第 13 關（廣告用語）只有身份／領域勾了美容或醫美才會出現 */
 function wizSeq(){
   const all = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14];
-  return all.filter(i => i !== 13 || persona.industry === '美業／醫美相關');
+  return all.filter(i => i !== 13 || isBeautyLike(persona));
 }
 
 /* ---- 狀態操作：文字欄位只存不重繪，才不會打字打到一半失焦 ---- */
@@ -2319,7 +2401,14 @@ function wiz1(){
           '例：中壢在地、療癒手作風的美業工作室') +
     hText('你的專業是什麼', '你最會、講起來最有底氣的那一塊。這決定 AI 敢不敢用專業口吻替你說話。', 'expertise',
           '例：臉部保養療程、輕熟齡肌膚調理', true) +
-    hChips('所屬產業別', '這會決定後面要不要提醒你廣告用語的地雷。', 'industry', false) +
+    hChips('你目前有哪些身份／領域？', '可以複選，選出現在跟你有關的身份或領域就好。', 'identities', true) +
+    (identityList().indexOf('其他') > -1
+      ? hText('其他身份／領域', '上面沒有的，直接寫下來。', 'identityOther', '例：攝影師、瑜伽老師、保險業務')
+      : '') +
+    /* 從舊版「美業／醫美相關」轉過來、而且還沒動過選項的人，提醒一次做醫美要自己加勾 */
+    (persona.industry === LEGACY_BEAUTY && identityList().join('|') === BEAUTY_IDS[0]
+      ? '<div class="hint" style="margin:-8px 0 18px;font-size:12.5px;color:var(--gray)">你之前選的是舊版的「美業／醫美相關」，已先轉成「美容／美睫／美甲／美髮」。如果你也做醫美，請再勾選「醫美相關」。</div>'
+      : '') +
     hNav();
 }
 
@@ -2499,7 +2588,7 @@ function wiz13(){
     '<div style="font-size:12.5px;line-height:1.85;margin-top:3px">' + esc(g[1]) + '</div></div>').join('');
 
   return hHead(hEye(13), '廣告用語提醒',
-      '你選了「美業／醫美相關」。下面這份清單是衛生局的刊載須知，先看過再繼續——這整份會自動寫進你每一份指令裡，AI 會照著避開。') +
+      '你的身份／領域勾了美容或醫美相關。下面這份清單是衛生局的刊載須知，先看過再繼續——這整份會自動寫進你每一份指令裡，AI 會照著避開。') +
 
     '<div class="rulebox">' +
       '<div class="rulebox-h">不可刊登（會被開罰）</div>' + banHtml +
@@ -2522,7 +2611,7 @@ function wiz13(){
 
     '<label class="cbrow" style="margin-top:18px"><input type="checkbox"' + (persona.complianceAck ? ' checked' : '') +
       ' onchange="wCheck(\'complianceAck\',this.checked)">我知道了，之後生成內容時會避開這些字眼</label>' +
-    '<div class="hint" style="margin-top:10px">不管有沒有勾，只要產業別選了美業／醫美，這份清單都會自動寫進指令的【背景】裡。</div>' +
+    '<div class="hint" style="margin-top:10px">不管有沒有勾，只要身份／領域選了美容或醫美相關，這份清單都會自動寫進指令的【背景】裡。</div>' +
     hNav('產生我的人設指令 →');
 }
 function wiz14(){
@@ -2597,7 +2686,7 @@ function buildPersonaCard(){
   L.push('帳號：' + (p.handle || '—'));
   L.push('定位：' + (p.positioning || '—'));
   L.push('專業：' + (tx(p.expertise) || '—'));
-  L.push('產業：' + (p.industry || '—'));
+  L.push('身份／領域：' + (identityText(p) || '—'));
   L.push('');
   L.push('特質：' + [g(p.commStyle), g(p.contentEnergy), g(p.interactStyle)].filter(x => x !== '—').join(' ／ '));
   if(p.customTraits) L.push('補充：' + p.customTraits);
@@ -2941,11 +3030,13 @@ function renderOut(){
     const gs = genState[gkey()] || {};
     const missing = TYPES[curType].fields.filter(f =>
       f.req && (!f.showIf || f.showIf(gs)) && !String(gs[f.k] || '').trim());
+    const copyBtn = '<button class="btn gen-copy" onclick="copyOut()">複製 AI 指令</button>' +
+      '<span class="gen-hint">複製後貼到你想使用的 AI，就可以繼續生成內容。</span>';
     doneEl.innerHTML = missing.length ? '' : (personaScore() >= 60
-      ? '<div class="gen-done"><b>✦ 你的專屬 AI 指令已整理完成</b>' +
-        '<span>已自動帶入你的定位與人設資料，複製後貼到你想使用的 AI 即可。</span></div>'
-      : '<div class="gen-done mid"><b>✦ 你的 AI 指令已整理完成</b>' +
-        '<span>不過人設還沒填完，指令裡關於你的資料比較少。複製後貼到你想使用的 AI 即可，有空再回「我的定位」補齊。</span></div>');
+      ? '<div class="gen-done"><b>你的專屬 AI 指令已整理完成 ✦</b>' +
+        '<span>這份指令已經自動帶入你的定位、人設與這次的需求。</span>' + copyBtn + '</div>'
+      : '<div class="gen-done mid"><b>你的專屬 AI 指令已整理完成 ✦</b>' +
+        '<span>這份指令已經帶入這次的需求。不過人設還沒填完，關於你的資料比較少，有空再回「我的定位」補齊。</span>' + copyBtn + '</div>');
   }
 
   document.getElementById('genOut').textContent = cur.text;
