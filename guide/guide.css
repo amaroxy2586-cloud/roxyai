@@ -1,0 +1,46 @@
+/* Additive guide-only styling. The original tool and its storage stay untouched. */
+:root{--bg:#f7f3ed;--orange:#ad4e32;--brick:#984129}
+body{overflow-x:visible;overflow-wrap:break-word}
+.wrap{width:100%;max-width:680px;padding-inline:24px}
+.top{border-bottom:1px solid var(--line)}
+.top-in{font-size:14px}
+.logo{background:var(--brick)}
+.hero{padding-block:36px 48px}
+.hero-h{font-size:clamp(30px,8.1vw,52px);line-height:1.45;margin-bottom:22px}
+.hero-h span{display:block}
+.h2 span,.big span,.belief .final span{max-width:100%}
+.asklist{grid-template-columns:1fr 1fr;gap:8px;margin-block:20px}
+.asklist li{width:100%;font-size:15px;padding:8px 12px;text-align:center}
+.hero-q{font-size:22px}
+.product{margin-block:24px 20px;padding:20px;border-radius:18px;border-left:3px solid var(--brick)}
+.product-name{font-size:22px}
+.product-sub{font-size:16px}
+.product-output{font-size:15px;color:var(--ink-soft);line-height:1.75}
+.hero .btn{width:100%;font-size:17px}
+.btn-main{box-shadow:0 6px 18px #9841291a}
+.guide-nav{position:sticky;top:0;z-index:5;background:#fffdf9;border-block:1px solid var(--line)}
+.guide-nav .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding-inline:12px}
+.guide-nav a{display:flex;align-items:center;justify-content:center;text-align:center;min-height:52px;font-size:14px;text-decoration:none;font-weight:700}
+.guide-nav a:hover{background:var(--blush)}
+section[id]{scroll-margin-top:76px}
+.skip-link{position:fixed;left:12px;top:-100px;z-index:10;background:var(--card);padding:12px 20px}
+.skip-link:focus{top:12px}
+.sec{padding-block:64px}
+.flow li{min-width:0}
+.flow li>span:last-child{min-width:0}
+.cards{gap:18px}
+.card{box-shadow:none}
+.faq summary{padding-block:20px}
+.faq .a{font-size:17px}
+.badge{font-size:14px}
+.foot a{display:inline-flex;align-items:center;min-height:48px}
+@media(min-width:768px){
+  .hero{padding-block:60px 70px}
+  .hero .wrap{position:relative}
+  .hero .wrap::after{content:'✦';position:absolute;right:32px;top:32px;font-size:72px;color:#c88d6e;transform:rotate(12deg);pointer-events:none}
+  .hero .btn{width:auto;min-width:300px}
+  .asklist{max-width:440px}
+  .sec{padding-block:88px}
+  .guide-nav .wrap{max-width:680px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}

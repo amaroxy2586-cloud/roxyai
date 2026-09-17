@@ -7,3 +7,6 @@
 - 規格與驗收清單見 `規格.md`
 
 - 公開導覽頁：`guide/index.html`（https://amaroxy2586-cloud.github.io/roxyai/guide/），第一次使用前的 3～5 分鐘說明，不讀寫 localStorage；最後按鈕連到 `../?from=guide`
+
+- 導覽頁手機排版樣式：`guide/guide.css`。部署時與 `guide/index.html` 一起上傳，維持相同目錄。
+- 本次修改範圍、20 項測試與真人驗收限制：見 `導覽頁驗收.md`。
