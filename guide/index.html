@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>AI 定位指令工具包｜第一次使用導覽</title>
+<meta name="description" content="AI 很強，但它不一定認識你。先建立你的 AI 定位，再把腦中的想法整理成可以貼到 ChatGPT、Claude、Gemini 的專屬 AI 指令。">
+<!-- 分享到 LINE／FB 時顯示的標題與說明 -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AI 定位指令工具包">
+<meta property="og:title" content="AI 定位指令工具包｜3 分鐘看懂怎麼用">
+<meta property="og:description" content="AI 很強，但它不一定認識你。先建立你的 AI 定位，再把想法整理成專屬 AI 指令。">
+<meta property="og:url" content="https://amaroxy2586-cloud.github.io/roxyai/guide/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="AI 定位指令工具包｜3 分鐘看懂怎麼用">
+<meta name="twitter:description" content="AI 很強，但它不一定認識你。先建立你的 AI 定位，再把想法整理成專屬 AI 指令。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* ==================================================================
+   AI 定位指令工具包｜公開導覽頁
+   第一次使用前的 3～5 分鐘導覽。這一頁不讀寫 localStorage，
+   只負責「看懂 → 知道為什麼 → 知道怎麼用 → 敢開始」，最後導向工具。
+   色票沿用 Roxy 品牌（陶土橘系、米底、襯線標題、膠囊按鈕）。
+   ================================================================== */
+:root{
+  --orange:#D97757;      /* 主動作 */
+  --brick:#A8462A;       /* 強調文字、連結、hover */
+  --peach:#F2B49A;       /* 螢光筆、外框 */
+  --blush:#FBEDE5;       /* 區塊底 */
+  --bg:#F4EFE7;          /* 頁面底 */
+  --card:#FFFDF9;        /* 卡片底 */
+  --line:#E3D9CC;        /* 分隔線 */
+  --ink:#2E2A27;         /* 內文 */
+  --ink-soft:#5E554D;    /* 次要文字（米底上對比約 6:1）*/
+  --on-dark:#FBF5EE;     /* 深底上的字 */
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --sans:"Noto Sans TC",-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  --r:22px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:17px;line-height:1.85;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:var(--brick)}
+img{max-width:100%}
+ul,ol{list-style:none}
+
+/* 共用 */
+.wrap{max-width:600px;margin:0 auto;padding-inline:22px}
+.sec{padding-block:76px}
+.sec.alt{background:var(--card)}
+.sec.blush{background:var(--blush)}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:.14em;color:var(--brick);margin-bottom:14px}
+.h2{font-family:var(--serif);font-weight:700;font-size:28px;line-height:1.45;letter-spacing:.01em;margin-bottom:22px}
+.h2 span,.big span,.hero-h span{display:inline-block}   /* 手機換行只從逗號後換，不讓最後一個字落單 */
+.big{font-family:var(--serif);font-weight:700;font-size:26px;line-height:1.55;margin-block:26px}
+.hl{background:linear-gradient(transparent 62%, var(--peach) 62%);padding-inline:2px}
+.lead{font-size:18px}
+p + p{margin-top:14px}
+.soft{color:var(--ink-soft)}
+.gap{height:22px}
+
+/* 按鈕：膠囊、拇指好按。主按鈕字 20px 粗體，白字在陶土橘上達大字對比標準 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:58px;padding:14px 30px;
+  border-radius:999px;font-size:20px;font-weight:700;text-decoration:none;line-height:1.4;text-align:center;
+  transition:background .15s, transform .15s}
+.btn-main{background:var(--orange);color:#fff;box-shadow:0 8px 22px rgba(217,119,87,.28)}
+.btn-main:hover{background:var(--brick)}
+.btn-soft{background:var(--card);color:var(--brick);border:2px solid var(--peach);font-size:18px;min-height:54px}
+.btn-soft:hover{border-color:var(--orange)}
+.btn:active{transform:translateY(1px)}
+:focus-visible{outline:3px solid var(--brick);outline-offset:3px;border-radius:12px}
+.btn:focus-visible{border-radius:999px}
+
+/* 頁首 */
+.top{padding-block:18px}
+.top-in{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;letter-spacing:.02em}
+.logo{width:32px;height:32px;border-radius:10px;background:var(--orange);color:#fff;display:grid;place-items:center;font-size:16px}
+
+/* SECTION 1 Hero */
+.hero{padding-block:34px 84px}
+.hero-h{font-family:var(--serif);font-weight:700;font-size:38px;line-height:1.4;letter-spacing:.01em;margin-bottom:30px}
+.hero-h .accent{color:var(--brick)}
+.asklist{margin:18px 0 22px;display:grid;gap:10px}
+.asklist li{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:9px 20px;width:fit-content;
+  font-weight:500;box-shadow:0 2px 8px rgba(46,42,39,.04)}
+.hero-q{font-family:var(--serif);font-weight:700;font-size:23px;line-height:1.6;margin-top:6px}
+.product{margin-block:44px 30px;padding:24px 24px 22px;border-radius:var(--r);background:var(--card);border:1px solid var(--line)}
+.product-name{font-family:var(--serif);font-weight:700;font-size:24px;line-height:1.4}
+.product-sub{color:var(--brick);font-weight:700;margin-top:4px}
+
+/* 流程圖：一步一格，中間用箭頭接。箭頭是裝飾，讀螢幕的人聽到的是有序清單 */
+.flow{display:grid;margin-block:30px 6px}
+.flow li{position:relative;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 18px;
+  font-weight:700;display:flex;align-items:center;gap:12px}
+.flow li + li{margin-top:36px}
+.flow li + li::before{content:"↓";content:"↓" / "";position:absolute;top:-31px;left:50%;transform:translateX(-50%);
+  color:var(--orange);font-weight:700;font-size:20px;line-height:1}
+.flow .ico{font-size:20px;width:28px;text-align:center;flex:0 0 28px}
+.flow li.key{background:var(--blush);border-color:var(--peach)}
+.flow li.out{border-style:dashed;background:transparent}
+.flow small{display:block;font-weight:400;font-size:13.5px;color:var(--ink-soft);line-height:1.6}
+
+/* SECTION 3 */
+.quote{margin-block:24px;padding:22px 24px;background:var(--card);border-radius:var(--r) var(--r) var(--r) 6px;border:1px solid var(--line)}
+.quote p{font-family:var(--serif);font-weight:700;font-size:24px}
+.quote cite{display:block;font-style:normal;font-size:14px;color:var(--ink-soft);margin-top:4px}
+.biglist{display:flex;flex-wrap:wrap;gap:8px;margin-block:18px}
+.biglist li{background:var(--blush);border-radius:999px;padding:6px 16px;font-weight:500}
+.doc{margin-block:28px;padding:22px;border-radius:var(--r);background:var(--card);border:2px dashed var(--peach);text-align:center}
+.doc b{font-family:var(--serif);font-size:22px;line-height:1.5;display:block}
+.callout{margin-top:34px;padding:26px 24px;border-radius:var(--r);background:var(--ink);color:var(--on-dark)}
+.callout p{font-family:var(--serif);font-weight:700;font-size:23px;line-height:1.6}
+.callout .dim{font-family:var(--sans);font-weight:500;font-size:16px;opacity:.85}
+
+/* SECTION 4 對話泡泡 */
+.bubbles{display:grid;gap:12px;margin-block:26px}
+.bubbles li{background:var(--card);border:1px solid var(--line);padding:12px 18px;border-radius:20px 20px 20px 6px;width:fit-content;max-width:100%}
+.bubbles li:nth-child(even){justify-self:end;border-radius:20px 20px 6px 20px;background:var(--blush);border-color:var(--peach)}
+
+/* SECTION 5 卡片 */
+.cards{display:grid;gap:16px;margin-top:30px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px 22px}
+.card-no{font-size:13px;font-weight:700;color:var(--brick);letter-spacing:.1em}
+.card h3{font-family:var(--serif);font-size:22px;margin:4px 0 10px}
+.card-q{font-weight:700}
+.card p{font-size:16px}
+.note{margin-top:22px;font-size:15.5px;color:var(--ink-soft);background:var(--card);border-radius:14px;padding:14px 18px;border:1px solid var(--line)}
+.note b{color:var(--ink)}
+
+/* SECTION 6 步驟 */
+.steps{display:grid;gap:14px;margin-top:30px}
+.step{display:flex;gap:16px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px 20px}
+.step-no{flex:0 0 44px;height:44px;border-radius:50%;background:var(--orange);color:#fff;display:grid;place-items:center;
+  font-weight:700;font-size:19px;font-family:var(--serif)}
+.step-t{flex:1 1 auto;min-width:0}
+.step-t h3{font-family:var(--serif);font-size:21px;line-height:1.45;margin:2px 0 8px}
+.step-t p{font-size:16px}
+.step-label{font-size:12.5px;font-weight:700;color:var(--brick);letter-spacing:.12em}
+.tip{margin-top:12px;font-size:15px;background:var(--blush);border-radius:12px;padding:10px 14px}
+.mini{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:12px;font-size:15px;font-weight:500}
+.mini span.p{background:var(--blush);border-radius:999px;padding:4px 12px}
+.mini span.a{color:var(--orange);font-weight:700}
+
+/* SECTION 7 資料保存 */
+.store{margin-block:26px;padding:24px;border-radius:var(--r);background:var(--card);border:2px solid var(--peach);text-align:center}
+.store-big{font-family:var(--serif);font-weight:700;font-size:26px;line-height:1.5;margin-top:4px}
+.store-big span{display:inline-block}
+.store-big .plus{color:var(--orange);padding-inline:6px}
+.twob{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-block:18px;text-align:center}
+.twob .b{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 8px;font-weight:700;font-size:15.5px;line-height:1.5}
+.twob .x{font-size:14px;color:var(--brick);font-weight:700;line-height:1.3}
+.rec{display:grid;gap:10px;margin-block:18px 8px}
+.rec li{display:flex;gap:12px;align-items:flex-start;background:var(--card);border-radius:14px;padding:12px 16px;border:1px solid var(--line);font-weight:500}
+.rec li .ck{color:var(--orange);font-weight:700;flex:0 0 auto}
+.h3{font-family:var(--serif);font-weight:700;font-size:21px;line-height:1.45;margin:38px 0 6px}
+.where{font-size:15px;color:var(--ink-soft);margin-top:14px}
+.tipcard{margin-top:34px;padding:22px;border-radius:var(--r);background:var(--card);border:1px solid var(--line)}
+.tipcard h3{font-family:var(--serif);font-size:20px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.neq{font-family:var(--sans);font-size:13px;font-weight:700;background:var(--ink);color:var(--on-dark);border-radius:999px;padding:3px 12px;letter-spacing:.04em}
+.mid-cta{margin-top:44px;text-align:center}
+.mid-cta .btn{width:100%;max-width:420px}
+
+/* SECTION 8 故事 */
+.avatar{width:64px;height:64px;border-radius:50%;background:var(--orange);color:#fff;display:grid;place-items:center;
+  font-family:var(--serif);font-weight:700;font-size:26px;margin-bottom:20px}
+.pull{font-family:var(--serif);font-weight:700;font-size:22px;line-height:1.6;border-left:4px solid var(--peach);padding-left:16px;margin-block:28px}
+.story .inner{display:grid;gap:8px;margin-block:16px;padding:18px 20px;background:var(--blush);border-radius:16px;font-weight:500}
+
+/* SECTION 9 */
+.scatter{display:flex;flex-wrap:wrap;gap:10px;margin-block:24px}
+.scatter span{background:var(--card);border:1px dashed var(--ink-soft);border-radius:12px;padding:6px 14px;font-size:15.5px}
+.scatter span:nth-child(2){transform:rotate(-2deg)}
+.scatter span:nth-child(3){transform:rotate(1.5deg)}
+.carry{display:flex;flex-wrap:wrap;gap:8px;margin-block:18px}
+.carry li{background:var(--orange);color:#fff;border-radius:999px;padding:6px 16px;font-weight:700;font-size:18px}
+
+/* SECTION 10 目前不會 */
+.not{margin-block:14px 22px;display:grid;gap:8px}
+.not li{display:flex;gap:12px;align-items:center;padding:10px 16px;border-radius:12px;background:var(--bg);color:var(--ink-soft)}
+.not li .no{flex:0 0 auto;font-size:13px;font-weight:700;color:var(--ink-soft);border:1px solid var(--line);background:var(--card);border-radius:999px;padding:1px 10px}
+.role{margin-top:30px;padding:24px;border-radius:var(--r);background:var(--blush);border:1px solid var(--peach)}
+.role .r{font-family:var(--serif);font-weight:700;font-size:21px;line-height:1.6}
+
+/* SECTION 11 理念（深底、大量留白） */
+.belief{background:var(--ink);color:var(--on-dark);padding-block:104px}
+.belief .h2{font-size:30px;color:var(--on-dark)}
+.belief p{font-size:18px;opacity:.92}
+.belief .list{margin-block:18px;display:grid;gap:4px;font-weight:500}
+.belief .final{font-family:var(--serif);font-weight:700;font-size:34px;line-height:1.5;margin-top:60px;opacity:1;color:#fff}
+.belief .final span{display:inline-block}
+.belief .final em{font-style:normal;color:var(--peach)}
+
+/* SECTION 12 FAQ：用原生 details，鍵盤 Enter／空白鍵就能開合 */
+.faq{display:grid;gap:12px;margin-top:28px}
+.faq details{background:var(--card);border:1px solid var(--line);border-radius:18px}
+.faq summary{list-style:none;cursor:pointer;display:flex;gap:14px;align-items:flex-start;padding:16px 18px;font-weight:700;font-size:17px;line-height:1.6;min-height:56px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary .q{flex:0 0 auto;color:var(--brick);font-family:var(--serif)}
+.faq summary .t{flex:1 1 auto;min-width:0}
+.faq summary .pm{flex:0 0 auto;width:28px;height:28px;border-radius:50%;background:var(--blush);color:var(--brick);display:grid;place-items:center;font-size:18px;line-height:1;transition:transform .2s}
+.faq details[open] summary .pm{transform:rotate(45deg)}
+.faq summary:focus-visible{border-radius:18px}
+.faq .a{padding:0 20px 20px 48px;font-size:16px}
+.faq .a p + p{margin-top:10px}
+
+/* SECTION 13 規劃 */
+.road{display:grid;gap:10px;margin-block:22px}
+.road li{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:12px 16px;font-weight:500}
+.badge{font-size:12.5px;font-weight:700;color:var(--ink-soft);background:var(--bg);border-radius:999px;padding:2px 10px;white-space:nowrap}
+
+/* SECTION 14 最後 CTA */
+.final-cta{text-align:center;padding-block:96px 104px}
+.final-cta .h2{font-size:34px;margin-bottom:12px}
+.final-cta .btn{margin-top:30px;width:100%;max-width:420px}
+.final-cta .small{font-size:15px;color:var(--ink-soft);margin-top:18px}
+
+.foot{padding-block:30px 44px;text-align:center;font-size:14px;color:var(--ink-soft);border-top:1px solid var(--line)}
+.foot a{font-weight:700}
+
+@media (min-width:768px){
+  body{font-size:18px}
+  .wrap{max-width:640px}
+  .sec{padding-block:104px}
+  .hero{padding-block:54px 110px}
+  .hero-h{font-size:52px}
+  .h2{font-size:34px}
+  .big{font-size:30px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-in"><span class="logo" aria-hidden="true">✦</span><span>AI 定位指令工具包</span></div>
+</header>
+
+<main>
+
+<!-- ============ SECTION 1｜Hero ============ -->
+<section class="hero" aria-labelledby="h-hero">
+  <div class="wrap">
+    <h1 id="h-hero" class="hero-h"><span>AI 很強，</span><span class="accent">但它不一定認識你。</span></h1>
+    <p class="lead">每換一個 AI、每開始一段新的重要對話，<br>你是不是又要重新解釋：</p>
+    <ul class="asklist">
+      <li>我是誰？</li>
+      <li>我在做什麼？</li>
+      <li>我的客人是誰？</li>
+      <li>我想怎麼說話？</li>
+    </ul>
+    <p class="hero-q">如果這些事情，<br>可以先整理一次呢？</p>
+
+    <div class="product">
+      <p class="product-name">AI 定位指令工具包</p>
+      <p class="product-sub">讓不同的 AI，都能快速認識你。</p>
+    </div>
+    <a class="btn btn-soft" href="#what">先看看它怎麼幫我 ↓</a>
+  </div>
+</section>
+
+<!-- ============ SECTION 2｜它到底是什麼？ ============ -->
+<section class="sec alt" id="what" aria-labelledby="h-what">
+  <div class="wrap">
+    <p class="eyebrow">它到底是什麼？</p>
+    <h2 id="h-what" class="h2">它不是另一個 AI。</h2>
+    <p class="big"><span>它更像是你和 AI 中間的</span><span class="hl">「翻譯器」。</span></p>
+    <p>很多時候，不是 AI 不夠厲害。</p>
+    <p>而是我們腦中知道自己想要什麼，<br>卻不知道要怎麼完整地跟 AI 說。</p>
+    <p>AI 定位指令工具包會先認識你，<br>再透過問題一步一步訪問你。</p>
+    <p>把原本散在腦袋裡的想法整理起來，<br>最後變成一份 AI 更容易理解的指令。</p>
+
+    <ol class="flow" aria-label="使用流程">
+      <li><span class="ico" aria-hidden="true">💭</span>你腦中的想法</li>
+      <li><span class="ico" aria-hidden="true">🗣️</span>工具訪問你</li>
+      <li><span class="ico" aria-hidden="true">🧩</span>帶入你的 AI 定位</li>
+      <li class="key"><span class="ico" aria-hidden="true">✦</span><span>整理成專屬指令<small>這個工具做到這一步</small></span></li>
+      <li><span class="ico" aria-hidden="true">📋</span>貼到你習慣使用的 AI</li>
+      <li class="out"><span class="ico" aria-hidden="true">✍️</span><span>繼續生成內容<small>在 ChatGPT／Claude／Gemini 等 AI 裡完成</small></span></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============ SECTION 3｜我已經有 ChatGPT ============ -->
+<section class="sec" aria-labelledby="h-gpt">
+  <div class="wrap">
+    <p class="eyebrow">常被問的第一個問題</p>
+    <h2 id="h-gpt" class="h2"><span>「我都有 ChatGPT 了，</span><span>為什麼還需要這個？」</span></h2>
+    <p>有測試者跟我說：</p>
+    <blockquote class="quote">
+      <p>「我覺得 GPT 很笨。」</p>
+      <cite>— 第一輪真人測試</cite>
+    </blockquote>
+    <p class="big"><span>但很多時候，</span><span>不是 AI 笨，</span><span>而是它還不夠認識你。</span></p>
+    <p>不要期待每一個 AI、每一段新的重要對話，<br>都能自動完整掌握你的所有背景。</p>
+    <ul class="biglist" aria-label="你的背景">
+      <li>你的故事</li><li>你的經歷</li><li>你的專業</li><li>你的客群</li><li>你的服務</li><li>你習慣的說話方式</li>
+    </ul>
+    <p>如果當下沒有提供，<br>AI 就只能根據目前知道的資訊回答。</p>
+    <div class="doc">
+      <p class="soft" style="font-size:15px">所以這個工具先幫你準備</p>
+      <b>「一份 AI 看得懂的<br>我的說明書。」</b>
+    </div>
+    <p>之後在製作內容時，<br>把需要的定位資訊一起帶進指令。</p>
+    <div class="callout">
+      <p class="dim">不用每次都從</p>
+      <p>「嗨，我先介紹一下我是誰……」</p>
+      <p class="dim">重新開始。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 4｜不知道怎麼開始 ============ -->
+<section class="sec alt" aria-labelledby="h-start">
+  <div class="wrap">
+    <p class="eyebrow">另一種人</p>
+    <h2 id="h-start" class="h2">有時候不是不會用 AI。</h2>
+    <p class="big"><span>是連第一句要問什麼，</span><span>都不知道。</span></p>
+    <ul class="bubbles" aria-label="常見的開頭">
+      <li>「我想做一篇輪播。」</li>
+      <li>「我要宣傳這個活動。」</li>
+      <li>「我想生成一張圖。」</li>
+      <li>「我有一個想法，但不知道怎麼整理。」</li>
+    </ul>
+    <p>你不用先學會很厲害的 Prompt，<br>才開始用 AI。</p>
+    <p>工具會用「訪問你」的方式，<br>一步一步把你的想法問出來。</p>
+    <p class="big" style="margin-bottom:10px">你只需要回答。</p>
+    <p>剩下的，<br>再讓它幫你整理成更完整的 AI 指令。</p>
+  </div>
+</section>
+
+<!-- ============ SECTION 5｜現在可以拿它做什麼？ ============ -->
+<section class="sec" aria-labelledby="h-use">
+  <div class="wrap">
+    <p class="eyebrow">現在可以拿它做什麼？</p>
+    <h2 id="h-use" class="h2"><span>不知道從哪開始？</span><span>先從你今天真的要做的事情開始。</span></h2>
+    <div class="cards">
+      <article class="card">
+        <p class="card-no">01</p>
+        <h3>輪播貼文</h3>
+        <p class="card-q">有一個主題，<br>但不知道怎麼變成完整內容？</p>
+        <p>透過訪談把觀點、故事、受眾與目的整理出來，再產生專屬指令。</p>
+      </article>
+      <article class="card">
+        <p class="card-no">02</p>
+        <h3>Reels 短影音腳本</h3>
+        <p class="card-q">腦中有想法，<br>卻不知道怎麼變成可以拍的腳本？</p>
+        <p>先把想法說出來，再整理成更完整的腳本需求。</p>
+      </article>
+      <article class="card">
+        <p class="card-no">03</p>
+        <h3>圖片／活動海報</h3>
+        <p class="card-q">腦中知道想要什麼畫面，<br>但每次 AI 做出來都不太對？</p>
+        <p>透過問題把畫面、風格、用途與重點說清楚，再產生圖片生成指令。</p>
+      </article>
+    </div>
+    <p class="note">✦ 以上都是幫你產生<b>「專屬 AI 指令」</b>，不是在工具裡直接生成圖片、輪播或影片成品。複製到你習慣的 AI 之後，再繼續完成。</p>
+  </div>
+</section>
+
+<!-- ============ SECTION 6｜第一次使用 5 步驟 ============ -->
+<section class="sec blush" id="how" aria-labelledby="h-how">
+  <div class="wrap">
+    <p class="eyebrow">第一次使用，只要這樣做</p>
+    <h2 id="h-how" class="h2"><span>第一次使用，</span><span>不用想得太複雜。</span></h2>
+    <ol class="steps">
+      <li class="step">
+        <span class="step-no" aria-hidden="true">1</span>
+        <div class="step-t">
+          <p class="step-label">STEP 1</p>
+          <h3>建立我的 AI 定位</h3>
+          <p>先讓 AI 認識：你是誰、你做什麼、你想吸引誰、你主要提供什麼、你希望 AI 怎麼幫你說話。</p>
+          <p class="tip">第一次只要完成基礎定位即可，其他故事與細節之後可以慢慢補。</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="step-no" aria-hidden="true">2</span>
+        <div class="step-t">
+          <p class="step-label">STEP 2</p>
+          <h3>保存你的定位</h3>
+          <p>目前資料儲存在這台裝置的這個瀏覽器。</p>
+          <p class="tip">建議固定使用同一台裝置＋同一個瀏覽器，並定期匯出備份。</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="step-no" aria-hidden="true">3</span>
+        <div class="step-t">
+          <p class="step-label">STEP 3</p>
+          <h3>選擇今天想做的內容</h3>
+          <p>例如：輪播貼文、Reels 腳本、圖片／活動海報。</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="step-no" aria-hidden="true">4</span>
+        <div class="step-t">
+          <p class="step-label">STEP 4</p>
+          <h3>回答問題</h3>
+          <p>不用自己研究 Prompt。跟著問題，把今天腦中的想法說出來。</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="step-no" aria-hidden="true">5</span>
+        <div class="step-t">
+          <p class="step-label">STEP 5</p>
+          <h3>複製指令</h3>
+          <p>產生完成後：</p>
+          <p class="mini"><span class="p">複製指令</span><span class="a" aria-hidden="true">→</span><span class="p">貼到 ChatGPT／Claude／Gemini／其他適合的 AI</span><span class="a" aria-hidden="true">→</span><span class="p">繼續生成內容</span></p>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============ SECTION 7｜資料保存 ============ -->
+<section class="sec" id="data" aria-labelledby="h-data">
+  <div class="wrap">
+    <p class="eyebrow">🌙 重要：資料保存</p>
+    <h2 id="h-data" class="h2"><span>第一次使用前，</span><span>這件事一定要知道。</span></h2>
+    <div class="store">
+      <p class="soft" style="font-size:15.5px">目前你的 AI 定位資料，是儲存在</p>
+      <p class="store-big"><span>這台裝置</span><span class="plus">＋</span><span>這個瀏覽器</span></p>
+    </div>
+    <p>例如：你原本從 LINE 內建瀏覽器打開，後來改用 Chrome——</p>
+    <div class="twob" role="img" aria-label="LINE 內建瀏覽器和 Chrome 不會自動共用資料">
+      <span class="b">LINE<br>內建瀏覽器</span>
+      <span class="x">不會<br>自動共用</span>
+      <span class="b">Chrome</span>
+    </div>
+    <p>兩個瀏覽器不會自動共用原本的資料。</p>
+
+    <h3 class="h3">因此建議</h3>
+    <ul class="rec">
+      <li><span class="ck" aria-hidden="true">✓</span><span>固定使用同一台裝置 ＋ 同一個瀏覽器</span></li>
+      <li><span class="ck" aria-hidden="true">✓</span><span>定期「匯出備份」</span></li>
+    </ul>
+
+    <h3 class="h3">之後換手機或換瀏覽器</h3>
+    <ol class="flow" aria-label="換裝置的備份流程">
+      <li><span class="ico" aria-hidden="true">📱</span>原本有資料的瀏覽器</li>
+      <li class="key"><span class="ico" aria-hidden="true">⬇️</span>匯出備份</li>
+      <li><span class="ico" aria-hidden="true">🗂️</span>保存備份檔</li>
+      <li><span class="ico" aria-hidden="true">📲</span>新裝置／新瀏覽器</li>
+      <li class="key"><span class="ico" aria-hidden="true">⬆️</span>匯入備份</li>
+    </ol>
+    <p class="where">「匯出備份」「匯入備份」在工具的「備份」頁：手機版在畫面底部選單，電腦版在左側選單。</p>
+
+    <div class="tipcard">
+      <h3><span aria-hidden="true">✦</span> Tips：加入手機主畫面 <span class="neq">≠ 備份</span></h3>
+      <p>如果經常使用，可以把工具加入手機主畫面，下次就能更快速打開。</p>
+      <p><b>加入手機主畫面是為了方便開啟，「不等於備份」。</b>重要資料仍建議定期匯出備份。</p>
+    </div>
+
+    <div class="mid-cta">
+      <a class="btn btn-main" href="../?from=guide">開始建立我的 AI 定位 →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 8｜我是誰 ============ -->
+<section class="sec alt" aria-labelledby="h-me">
+  <div class="wrap story">
+    <p class="eyebrow">我是誰？為什麼做這個工具？</p>
+    <div class="avatar" aria-hidden="true">容</div>
+    <h2 id="h-me" class="h2"><span>我不是工程師。</span><br><span>我只是很需要一個這樣的工具。</span></h2>
+    <p>我是容真，<br>一間美容工作室的主理人，<br>也是一個一直需要經營自媒體的人。</p>
+    <p>以前的我很認真日更。</p>
+    <p>但有了孩子之後，<br>我要工作、服務客人，<br>也想把時間留給家人。</p>
+    <p>我開始發現：</p>
+    <p class="pull">不是我不知道自媒體重要，<br>而是一天真的只有 24 小時。</p>
+    <p>如果 AI 已經來了，<br>我為什麼不能讓它成為我的助理？</p>
+    <p>幫我找靈感、問我問題、整理腦中的想法，<br>再把原本散亂的東西整理成可以真正使用的內容。</p>
+    <p>後來我開始教剪輯、教自媒體。我又發現：</p>
+    <p>上課的時候，我可以把每一步講得很細。<br>但學生回到自己的生活裡，還是可能突然忘記：</p>
+    <div class="inner">
+      <span>「老師那時候怎麼教的？」</span>
+      <span>「這一步我要問 AI 什麼？」</span>
+      <span>「我知道我要發文，但到底要從哪裡開始？」</span>
+    </div>
+    <p>所以我開始想：</p>
+    <p class="pull">如果我沒辦法每天坐在學生旁邊，<br>那能不能把我的思考方式，<br>做成一套他隨時都可以打開使用的工具？</p>
+    <p>這就是我開始做「AI 定位指令工具包」的原因。</p>
+    <div class="gap"></div>
+    <p>我想做的不是讓 AI 取代我們。</p>
+    <p>而是把那些很花時間的整理、發想與溝通交給 AI，</p>
+    <p class="big" style="margin-top:14px"><span>讓我們把時間，</span><span>留給真正重要的工作與生活。</span></p>
+  </div>
+</section>
+
+<!-- ============ SECTION 9｜免費 Prompt ============ -->
+<section class="sec" aria-labelledby="h-free">
+  <div class="wrap">
+    <p class="eyebrow">另一個常被問的問題</p>
+    <h2 id="h-free" class="h2"><span>網路上明明有很多免費指令，</span><span>為什麼還需要這個？</span></h2>
+    <p>我以前也想過這個問題。網路上真的有很多免費 Prompt。</p>
+    <p>今天收藏一個圖片指令，明天存一個文案模板，後天又看到一個短影音腳本。</p>
+    <div class="scatter" aria-hidden="true">
+      <span>圖片指令</span><span>文案模板</span><span>短影音腳本</span><span>另一張截圖</span>
+    </div>
+    <p>最後常常變成：</p>
+    <p class="big" style="margin-top:10px"><span>「我記得我有存過……</span><span>但到底放在哪裡？」</span></p>
+    <p>而且那些指令通常是一份一份分開的，也不一定知道你是誰。</p>
+    <p>所以我想做的是：把自媒體經營常用的指令，整理在同一個工具裡。</p>
+    <p>更重要的是：在開始製作以前，先建立你的 AI 人設定位。</p>
+    <p>之後產生指令時，不只是拿到一個大家都一樣的 Prompt，而是可以把你的</p>
+    <ul class="carry" aria-label="會一起帶進指令的資料">
+      <li>身份</li><li>受眾</li><li>服務</li><li>故事</li><li>內容風格</li>
+    </ul>
+    <p>一起帶進去。</p>
+    <div class="callout">
+      <p>不用再到處翻 Prompt。</p>
+      <p style="margin-top:8px">也不用每一次，<br>都重新介紹自己。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 10｜它不會做什麼 ============ -->
+<section class="sec alt" aria-labelledby="h-not">
+  <div class="wrap">
+    <p class="eyebrow">先說清楚</p>
+    <h2 id="h-not" class="h2"><span>它現在不是</span><span>「全自動經營 IG」。</span></h2>
+    <p><b>目前它不會：</b></p>
+    <ul class="not">
+      <li><span class="no">不會</span>自動幫你經營 IG</li>
+      <li><span class="no">不會</span>自動排程發文</li>
+      <li><span class="no">不會</span>一鍵完成所有內容</li>
+      <li><span class="no">不會</span>自動幫你把所有內容發布出去</li>
+      <li><span class="no">不會</span>保證流量</li>
+      <li><span class="no">不會</span>保證變現</li>
+    </ul>
+    <div class="role">
+      <p class="soft" style="font-size:15px">它現在最主要的角色是</p>
+      <p class="r">「協助你把想法整理清楚，再變成更完整、更貼近你的 AI 指令。」</p>
+    </div>
+    <p style="margin-top:26px">所以使用流程仍然會是：</p>
+    <p class="mini"><span class="p">工具整理指令</span><span class="a" aria-hidden="true">→</span><span class="p">複製</span><span class="a" aria-hidden="true">→</span><span class="p">貼到適合的 AI</span><span class="a" aria-hidden="true">→</span><span class="p">繼續完成內容</span></p>
+    <p style="margin-top:22px" class="soft">坦白說，目前會多一個「複製到 AI」的步驟。但這也是現階段用相對簡單的方式，讓你先把自己的定位與常用指令集中起來。</p>
+  </div>
+</section>
+
+<!-- ============ SECTION 11｜產品理念 ============ -->
+<section class="belief" aria-labelledby="h-belief">
+  <div class="wrap">
+    <h2 id="h-belief" class="h2"><span>我不希望你用了 AI 之後，</span><span>反而越來越不像自己。</span></h2>
+    <p>因為真正有價值的，<br>從來不是那一段 Prompt。</p>
+    <div class="list">
+      <span>是你的經歷、</span>
+      <span>你的故事、</span>
+      <span>你踩過的雷、</span>
+      <span>你成功過的方法，</span>
+      <span>還有只有你才能說出來的觀點。</span>
+    </div>
+    <p>這些東西，<br>AI 沒辦法替你活過。</p>
+    <p>AI 可以幫我們發想、訪問、整理、加速。</p>
+    <p>但最後真正會讓受眾記得你的，<br>還是「你」。</p>
+    <p>所以我做 AI 定位，不是想讓 AI 取代你。<br>而是希望它在幫你創作的同時，</p>
+    <p style="font-weight:700">不要把你弄丟了。</p>
+    <p class="final"><span>「AI 不是你，</span><span><em>你才是真正的價值。</em>」</span></p>
+  </div>
+</section>
+
+<!-- ============ SECTION 12｜FAQ ============ -->
+<section class="sec" aria-labelledby="h-faq">
+  <div class="wrap">
+    <p class="eyebrow">常見問題</p>
+    <h2 id="h-faq" class="h2">還有疑問的話</h2>
+    <div class="faq">
+      <details>
+        <summary><span class="q">Q</span><span class="t">AI 人設定位一定要一次全部填完嗎？</span><span class="pm" aria-hidden="true">＋</span></summary>
+        <div class="a">
+          <p>不用。</p>
+          <p>第一次先完成基礎 AI 定位即可，讓 AI 先知道你是誰、你做什麼、你想吸引誰，以及你希望內容怎麼說。</p>
+          <p>其他故事、經歷與細節，之後有時間再慢慢補充。</p>
+        </div>
+      </details>
+      <details>
+        <summary><span class="q">Q</span><span class="t">為什麼我換瀏覽器之後，資料不見了？</span><span class="pm" aria-hidden="true">＋</span></summary>
+        <div class="a">
+          <p>目前資料是儲存在「這台裝置＋這個瀏覽器」。不同瀏覽器不會自動共用原本資料。</p>
+          <p>例如 LINE 內建瀏覽器與 Chrome，可能會是不同的儲存環境。</p>
+          <p>建議固定使用同一個瀏覽器，並定期匯出備份。</p>
+        </div>
+      </details>
+      <details>
+        <summary><span class="q">Q</span><span class="t">如果我要換手機或換瀏覽器呢？</span><span class="pm" aria-hidden="true">＋</span></summary>
+        <div class="a">
+          <p>先在原本有資料的瀏覽器中匯出備份，保存備份檔。</p>
+          <p>到新的裝置或瀏覽器後，再使用「匯入備份」恢復資料。</p>
+        </div>
+      </details>
+      <details>
+        <summary><span class="q">Q</span><span class="t">加入手機主畫面，資料就不會不見嗎？</span><span class="pm" aria-hidden="true">＋</span></summary>
+        <div class="a">
+          <p>不是。加入手機主畫面主要是方便快速開啟，它不等於備份。</p>
+          <p>重要資料仍建議定期匯出備份。</p>
+        </div>
+      </details>
+      <details>
+        <summary><span class="q">Q</span><span class="t">它會直接幫我生成圖片嗎？</span><span class="pm" aria-hidden="true">＋</span></summary>
+        <div class="a">
+          <p>目前不會直接在工具裡生成圖片。</p>
+          <p>它會協助你把圖片需求整理成更完整的 AI 指令，再複製到適合的 AI 圖片生成工具使用。</p>
+        </div>
+      </details>
+      <details>
+        <summary><span class="q">Q</span><span class="t">它會直接幫我寫完整貼文嗎？</span><span class="pm" aria-hidden="true">＋</span></summary>
+        <div class="a">
+          <p>目前主要產出的是「專屬 AI 指令」。</p>
+          <p>你再把指令複製到 ChatGPT、Claude、Gemini 或其他適合的 AI，繼續完成內容。</p>
+        </div>
+      </details>
+      <details>
+        <summary><span class="q">Q</span><span class="t">我已經有 ChatGPT，還需要這個嗎？</span><span class="pm" aria-hidden="true">＋</span></summary>
+        <div class="a">
+          <p>這個工具不是取代 ChatGPT。它比較像你和 AI 中間的翻譯器。</p>
+          <p>幫你先整理「我是誰」＋「我今天想做什麼」，再變成更完整的指令，讓你不用每次從零開始整理。</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 13｜未來規劃（都還沒上線）============ -->
+<section class="sec alt" aria-labelledby="h-future">
+  <div class="wrap">
+    <p class="eyebrow">未來想做到哪裡</p>
+    <h2 id="h-future" class="h2">這只是第一步。</h2>
+    <p>現在，我先把最常用的 AI 定位與自媒體指令整理在一起。</p>
+    <p>未來我希望慢慢發展：</p>
+    <ul class="road">
+      <li><span>限時動態內容模板</span><span class="badge">開發規劃中</span></li>
+      <li><span>月內容計畫</span><span class="badge">開發規劃中</span></li>
+      <li><span>更多自媒體內容流程</span><span class="badge">開發規劃中</span></li>
+      <li><span>更進一步的 AI 自動化</span><span class="badge">開發規劃中</span></li>
+    </ul>
+    <p class="soft" style="font-size:15px">以上都還沒有上線，也還沒有確定的上線時間。</p>
+  </div>
+</section>
+
+<!-- ============ SECTION 14｜最後 CTA ============ -->
+<section class="final-cta" aria-labelledby="h-go">
+  <div class="wrap">
+    <h2 id="h-go" class="h2">準備好了嗎？</h2>
+    <p class="big" style="margin-block:10px 18px"><span>先從建立你的第一份</span><span class="hl">「AI 說明書」</span><span>開始。</span></p>
+    <p class="soft">不用一次把自己全部寫完。<br>先讓 AI 認識基本的你，<br>之後再慢慢把它養得更完整。</p>
+    <a class="btn btn-main" href="../?from=guide">開始建立我的 AI 定位 →</a>
+    <p class="small">約 3～5 分鐘・不用註冊・資料存在你自己的瀏覽器</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p>AI 定位指令工具包</p>
+    <p style="margin-top:6px"><a href="../">已經在使用了？直接打開工具</a></p>
+  </div>
+</footer>
+
+</body>
+</html>

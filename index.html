@@ -336,6 +336,8 @@ select.inp{appearance:none;padding-right:34px}
 .home{margin-bottom:30px}
 .home-hero{padding:30px 28px;background:linear-gradient(165deg,var(--white) 55%,var(--orange-light))}
 .home-h{font-size:30px;font-weight:700;line-height:1.35;letter-spacing:.01em;margin-bottom:10px}
+.home-guide{margin-top:14px;font-size:13px;color:var(--gray)}
+.home-guide a{color:#A8462A;font-weight:700;margin-left:4px}
 .home-sub{font-size:19px;font-weight:700;color:#A8462A;line-height:1.5;margin-bottom:10px}
 /* 手機寬度會把「你。」單獨擠到下一行，所以兩半各自不斷行，要換就從逗號後面換 */
 .home-sub span{display:inline-block}
@@ -2925,6 +2927,9 @@ function renderHome(){
         '系統都會自動帶入你的經歷、定位、受眾與內容風格。</div>' +
       status +
       '<div class="row">' + cta + '</div>' +
+      /* 還沒建立定位的人，給一條回公開導覽頁的路 */
+      (personaReady(persona) ? '' :
+        '<p class="home-guide">第一次來、還不確定這是什麼？<a href="guide/">先看 3 分鐘導覽 →</a></p>') +
     '</div>' +
 
     '<div class="home-sec-h">使用方式</div>' +
@@ -3635,6 +3640,20 @@ document.getElementById('fileIn').onchange = function(e){
   renderGen();
   renderList();
   renderDash();
+
+  /* 從公開導覽頁（guide/）按「開始建立我的 AI 定位」進來會帶 ?from=guide。
+     工具本身沒有路由，這裡只看這一個參數，不讀寫 localStorage：
+     全新使用者直接進基礎定位 STEP 1；已經建立或填過資料的人停在原本首頁，不跳對話框、不強迫重填。
+     處理完把參數從網址拿掉，重新整理不會再觸發。 */
+  try{
+    const qs = new URLSearchParams(location.search);
+    if(qs.get('from') === 'guide'){
+      qs.delete('from');
+      const rest = qs.toString();
+      history.replaceState(null, '', location.pathname + (rest ? '?' + rest : '') + location.hash);
+      if(personaScore() === 0 && !savedStepNo() && !personaReady(persona)) wGo(1);
+    }
+  }catch(e){}
 })();
 </script>
 </body>
