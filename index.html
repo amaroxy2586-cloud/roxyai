@@ -1063,6 +1063,27 @@ const TYPES = {
        hint:'選「連字一起生」＝拿到可以直接發的成品；選「只要底圖」＝你自己在 Canva 排字，品牌一致性比較好控制。',
        opts:['連字一起生，我要可以直接發的成品','只要底圖，文字我自己排'],
        showIf: s => (s.mode||'').indexOf('A') === 0},
+
+      /* 品牌底色：選了才問三個顏色，指令裡會多一段【視覺規格】 */
+      {k:'bgBrand', t:'chips', label:'底圖要不要統一用品牌顏色？',
+       hint:'選「用品牌顏色」＝整組同一個底色、同一套字色，滑起來一看就知道是你；不選就照上面的風格走。',
+       opts:['用品牌顏色當底圖','不用，照上面的風格']},
+      {k:'bgColor', t:'chips', label:'底圖要什麼顏色？', showIf: isBrandBg,
+       hint:'整組每一張都會是這個顏色。',
+       opts:['米白 #F4EFE7','奶茶 #E8DCCB','純白 #FFFFFF','霧粉 #EFD9D4','鼠尾草綠 #C9D2BE','霧藍 #CBD5DF','深灰黑 #2E2A27','自己填色碼']},
+      {k:'bgColorOther', t:'text', label:'底圖顏色（自己填）', showIf: s => isBrandBg(s) && isOwnColor(s.bgColor),
+       ph:'例：#F7F1E8，或寫「很淡的杏色」'},
+      {k:'txtColor', t:'chips', label:'主要文字用什麼顏色？', showIf: isBrandBg,
+       hint:'淺色底配深色字、深色底配淺色字，才看得清楚。',
+       opts:['深灰黑 #2E2A27','深咖啡 #4A3B31','純白 #FFFFFF','自己填色碼']},
+      {k:'txtColorOther', t:'text', label:'文字顏色（自己填）', showIf: s => isBrandBg(s) && isOwnColor(s.txtColor),
+       ph:'例：#333333'},
+      {k:'accColor', t:'chips', label:'重點字用什麼顏色？', showIf: isBrandBg,
+       hint:'只會用在標題裡的重點字或一個小圖示，每張最多出現一次。',
+       opts:['陶土橘 #D97757','磚紅 #A8462A','芥末黃 #D9A441','墨綠 #4F6B53','深藍 #2F4A6D','自己填色碼']},
+      {k:'accColorOther', t:'text', label:'重點字顏色（自己填）', showIf: s => isBrandBg(s) && isOwnColor(s.accColor),
+       ph:'例：#E26D5A'},
+
       {k:'goal', t:'chips', label:'這篇的目的是什麼？', showIf: s => !isSplit(s),
        opts:['衝收藏分享','建立專業信任','導購成交','吸新粉追蹤','互動留言']},
       {k:'focusOffer', t:'chips', label:'這篇只推哪一項？', req:true,
@@ -1562,6 +1583,38 @@ function isGanhuo(s){ return ((s && s.arch) || '').indexOf('乾貨型') === 0; }
 /* 輪播：判斷是不是走 C「一張圖裂變」這條路線 */
 function isSplit(s){ return ((s && s.mode) || '').indexOf('C') === 0; }
 
+/* ---- 輪播：品牌底色 ---- */
+function isBrandBg(s){ return ((s && s.bgBrand) || '').indexOf('用品牌顏色') === 0; }
+function isOwnColor(c){ return (c || '').indexOf('自己填') === 0; }
+/* 選的是色卡就用色卡；選「自己填」就用他打的字；都沒選就請 AI 先問 */
+function pickColor(k){
+  const c = v(k);
+  if(!c) return '（未選，請先問我）';
+  if(isOwnColor(c)) return v(k + 'Other') || '（我還沒決定，請依我的品牌建議一個，並先問我）';
+  return c;
+}
+/* 選了品牌底色才有這段；規格內容是 Roxy 定的，只把三個顏色填進去 */
+function brandSpecLines(){
+  if(!isBrandBg(genState[gkey('carousel')] || {})) return [];
+  return [
+    '',
+    '【視覺規格－請嚴格遵守】',
+    '底色：整組統一使用 ' + pickColor('bgColor') + '，每一張都是同一個底色，',
+    '　　　不要換色、不要漸層、不要每張不同色',
+    '文字：主要文字使用 ' + pickColor('txtColor'),
+    '點綴：只允許 ' + pickColor('accColor') + '，且每一張最多出現一次',
+    '　　　（只用在標題的重點字，或一個小圖示）',
+    '字級：只有兩種——大標與內文，不要有第三種',
+    '對齊：全篇靠左對齊，每一張的文字起始位置都在同一條線上',
+    '留白：四周至少留出畫面的 8%，文字不要推到邊緣',
+    '禁止：漸層、陰影、外框、亮點特效、裝飾性貼圖、用 emoji 當分隔線',
+    '照片：如果要在照片上壓字，照片先調暗，而且只壓一行標題；',
+    '　　　資訊量多的那幾張，就用純底色不放照片',
+    '對比：如果文字主色跟底色太接近、看不清楚，先停下來提醒我換色，不要硬做。',
+    '這份視覺規格優先於下面其他的風格描述；插畫或照片元素都要放在這個底色上，不能蓋掉底色。'
+  ];
+}
+
 const BUILD = {
   poster(){
     if(!isPosterEdit(genState[gkey('poster')] || {})) return BUILD.posterNew();
@@ -1667,6 +1720,7 @@ const BUILD = {
       ? '統一的手繪插畫風：溫柔線條、低彩度、有手感、像日系繪本'
       : '統一的質感攝影風：乾淨、留白多、光線柔和、像雜誌內頁';
 
+    const brandOn = isBrandBg(genState[gkey('carousel')] || {});
     const common = [
       '請依序輸出：',
       '',
@@ -1708,10 +1762,13 @@ const BUILD = {
       '如果我沒有這張照片，替代方案是：（用什麼取代）',
       '',
       '④ 排版建議',
-      '照片上的文字怎麼放才看得清楚：字級大小關係、要不要加半透明色塊、字體感覺、3-4 個能搭我照片的色碼。'
+      '照片上的文字怎麼放才看得清楚：字級大小關係、要不要加半透明色塊、字體感覺、' + (brandOn ? '色碼一律照【視覺規格】，不要另外配色。' : '3-4 個能搭我照片的色碼。')
     ];
 
     const withText = or('textMode','連字一起生，我要可以直接發的成品').indexOf('連字一起生') === 0;
+    /* 選了品牌底色，排版建議就不要再叫 AI 自己配 3-4 個色碼，免得跟視覺規格打架 */
+    const brand = brandOn;
+    const palette = brand ? '色碼一律照【視覺規格】，不要另外配色' : '3-4 個色碼';
 
     const aBlock = withText ? [
       '',
@@ -1739,7 +1796,7 @@ const BUILD = {
       '　不要硬生出一堆爛字讓我自己發現。',
       '',
       '④ 備援排版建議',
-      '萬一某一張的字生壞了、我要自己在 Canva 補：告訴我那張的留白區塊在哪、字級大小關係、3-4 個色碼。'
+      '萬一某一張的字生壞了、我要自己在 Canva 補：告訴我那張的留白區塊在哪、字級大小關係、' + palette + '。'
     ] : [
       '',
       '③ 每一張的生圖指令（只要底圖，不要文字）',
@@ -1754,7 +1811,7 @@ const BUILD = {
       'prompt 內不要要求產生任何文字。',
       '',
       '④ 排版建議',
-      '文字怎麼壓在生成圖上：建議留白區塊在哪、字級大小關係、3-4 個色碼。'
+      '文字怎麼壓在生成圖上：建議留白區塊在哪、字級大小關係、' + palette + '。'
     ];
 
     const tailBlock = [
@@ -1782,9 +1839,10 @@ const BUILD = {
       '- 這篇的目的：' + or('goal','建立專業信任'),
       '- 這篇只推：' + or('focusOffer','（未選，請先問我）'),
       '- 看完我希望他做的事：' + or('want','（未選，請先問我）'),
-      '- 製作路線：' + mode
+      '- 製作路線：' + mode,
+      (brand ? '- 視覺：整組用品牌顏色（底色 ' + pickColor('bgColor') + '／文字 ' + pickColor('txtColor') + '／重點字 ' + pickColor('accColor') + '）' : null)
     ].concat(v('extra') ? ['- 其他要求：' + v('extra')] : []).concat(redLines()),
-      common.concat(isB ? bBlock : aBlock).concat(tailBlock).concat(isB ? [] : rhythm));
+      common.concat(brandSpecLines()).concat(isB ? bBlock : aBlock).concat(tailBlock).concat(isB ? [] : rhythm));
 
     if(isB) return text;
     return {
@@ -1862,7 +1920,7 @@ const BUILD = {
       '⑥ 貼文內文與 Hashtag',
       '150-250 字的貼文內文，開頭第一行要能單獨當鉤子（IG 只顯示第一行）。',
       '另外給 15 個 hashtag，分成「大標籤 3 個、中標籤 7 個、小眾精準標籤 5 個」。'
-    ]);
+    ].concat(brandSpecLines()));
 
     return {
       note: '📎 <b>先把圖丟給 AI，再貼這段指令。</b>順序反了它會先開始亂寫。' +
