@@ -436,6 +436,15 @@ select.inp{appearance:none;padding-right:34px}
   .modal-b{max-height:62vh}
   .toast{bottom:82px}
 }
+/* 月計畫方案卡片：沿用網站字體與配色，小螢幕直向排列。 */
+.month-plans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.month-plan{min-width:0;text-align:left;white-space:normal;overflow-wrap:anywhere;font:inherit;color:inherit;background:var(--card,#fffaf4);border:2px solid var(--line,#dfd2c4);border-radius:14px;padding:15px;cursor:pointer}
+.month-plan b,.month-plan span,.month-plan small{display:block}
+.month-plan span{margin:12px 0;line-height:1.8}.month-plan small{line-height:1.7}
+.month-plan.on{border-color:var(--orange,#bc694b);background:#fff0e5;box-shadow:0 0 0 1px var(--orange,#bc694b)}
+.month-plan:focus-visible{outline:3px solid var(--orange,#bc694b);outline-offset:3px}
+.month-input{min-width:0;max-width:100%;box-sizing:border-box}
+@media(max-width:1000px){.month-plans{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -1155,7 +1164,7 @@ const TYPES = {
 
   plan: {
     name:'週／月計劃', icon:'🗓️', cls:'s',
-    desc:'依照你的人設和這一檔的行銷目標，把一整週或一整月要發什麼排出來，含鉤子、CTA 與拍攝批次。',
+    desc:'週計畫沿用原本設定；月計畫選好月份、內容方案與限動天數，複製指令給 AI，一題一題整理當月素材。',
     fields:[
       {k:'span', t:'chips', label:'你要排多久的計劃？', req:true,
        opts:['週計劃（7 天）','月計劃（4 週）']},
@@ -1177,6 +1186,119 @@ const TYPES = {
     ]
   },
 };
+/* 月計畫獨立於週計畫，沿用每組人設各自的 genState 草稿。 */
+const MONTH_PLANS = {
+  A:{name:'方案 A｜輕量款',reels:4,carousel:4,stories:3,fit:'想先建立穩定發文習慣，不希望一開始內容量太大的使用者。'},
+  B:{name:'方案 B｜中階款',reels:8,carousel:4,stories:3,fit:'希望提高內容曝光，同時開始經營限時動態與觀眾互動的使用者。'},
+  C:{name:'方案 C｜高階經營款',reels:12,carousel:6,stories:5,fit:'希望把社群當成主要曝光、獲客或品牌經營管道，需要更完整內容佈局的使用者。'}
+};
+function isMonthlyPlan(s){ return /^月計[劃畫]/.test(s.span || ''); }
+/* 舊草稿的「月計劃（4 週）」仍然辨識；週計畫欄位與預設值不動。 */
+TYPES.plan.fields[0].opts[1] = '月計畫';
+TYPES.plan.fields.slice(1).forEach(f => { f.showIf = s => !isMonthlyPlan(s); });
+TYPES.plan.fields.splice(1,0,
+  {k:'planMonth',t:'month',label:'STEP 1｜你要規劃哪一個月份？',req:true,showIf:isMonthlyPlan},
+  {k:'monthPlan',t:'monthPlans',label:'STEP 2｜選擇本月內容方案',req:true,showIf:isMonthlyPlan},
+  {k:'storyDays',t:'chips',label:'STEP 3｜這個月想安排幾個限時動態發布日？',req:true,
+   hint:'這是整個月的發布日數，不是每週。限動不計入 Reels 與輪播篇數。',opts:['1 天','2 天','3 天','4 天','5 天'],showIf:isMonthlyPlan}
+);
+function monthlyPlanError(){
+  const s=genState[gkey()] || {};
+  if(curType !== 'plan' || !isMonthlyPlan(s)) return '';
+  const missing=[];
+  if(!/^(?!0000)\d{4}-(0[1-9]|1[0-2])$/.test(s.planMonth || '')) missing.push('規劃月份（年份與月份）');
+  if(!Object.prototype.hasOwnProperty.call(MONTH_PLANS,s.monthPlan)) missing.push('內容方案 A／B／C');
+  if(!/^[1-5] 天$/.test(s.storyDays || '')) missing.push('限動發布日數（1～5 天）');
+  return missing.length ? '請先選擇：' + missing.join('、') + '，才能產生月計畫訪談指令。' : '';
+}
+function buildMonthlyPlan(){
+  const error=monthlyPlanError();
+  if(error) return {note:esc(error),text:''};
+  const s=genState[gkey()], p=MONTH_PLANS[s.monthPlan];
+  const [year,month]=s.planMonth.split('-').map(Number);
+  const lastDay=new Date(Date.UTC(year,month,0)).getUTCDate();
+  const days=parseInt(s.storyDays,10);
+  // 範例在這裡只作風格參考，避免共用 exBlock 的「先分析兩句」干擾第一題。
+  const examples=['【語氣與內容風格參考】',
+    persona.aiRole ? '原本人設的 AI 專業角色（作為領域參考）：'+tx(persona.aiRole) : '',
+    persona.bestLine ? '表現好的開頭：'+tx(persona.bestLine)+'；數據：'+tx(persona.bestData) : '',
+    persona.worstLine ? '要避免的開頭：'+tx(persona.worstLine) : '',
+    ...(persona.examples||[]).filter(x=>tx(x.text)).map(x=>tx(x.note)+'：'+tx(x.text))
+  ].filter(Boolean).join('\n');
+  const text=[
+`【角色】
+你是使用者的專屬社群內容策略助理。根據使用者原本的人設、定位、客群、服務、品牌特色與這個月真正發生的事情，陪使用者整理出一份實際做得完的月計畫，不要只提供一堆空泛題目。`,
+`【已選擇的月計畫設定】
+規劃月份：${s.planMonth}（${year} 年 ${month} 月，共 ${lastDay} 天）
+選擇方案：${p.name}
+Reels 確切篇數：${p.reels} 篇
+輪播貼文確切篇數：${p.carousel} 篇
+限時動態發布日數：${days} 天（整個月，不是每週）
+每個限動發布日的建議篇數：約 ${p.stories} 篇
+三種形式分開計數。不得自行增加、減少或混淆篇數，也不得再次要求使用者選擇 A／B／C、月份或限動天數。所有發布日期必須落在 ${s.planMonth}-01 至 ${s.planMonth}-${lastDay}，不得猜測其他月份或直接從下週一開始。`,
+bgBlock({monthly:true}),examples,
+`【人設資料套用規則】
+優先沿用目前選用人設已完成的產業／職業、個人定位、目標客群、服務／產品、內容方向、品牌特色、語氣與內容風格、個人經歷及相關背景。不得自行設定產業或定位。
+已提供的人設、常見問答與訪談回答不要重新詢問。背景不完整時，只問真正缺少而且影響月計畫的資訊；不要另外開一輪人設問卷，不要固定要求重答五個背景問題。沒有填寫的資料不可當成已知事實。
+原本的語氣範例只用於理解風格，現在不必先分析或產出文案。`,
+`【月計畫訪談規則】
+現在不要直接生成月計畫。先說：「你目前選擇的是${p.name}，接下來我會一題一題陪你整理這個月可以使用的內容。」接著開始第一題：「這個月最重要的目標是什麼？」可提供曝光、互動、建立專業、增加詢問、銷售、招生、預約、導流、品牌經營等例子。
+每次回覆只能問一題，等使用者回答後，再根據回答決定下一題；不要一次顯示完整問卷，不要一次問三題，也不要把多個問題包裝成一題。
+主要訪談問題最多 8 題，必要追問最多 3 題（包含補足缺少的背景）。以下是需要確認的方向，不是固定問卷；前面已回答就跳過，資料夠用就停止提問：
+1. 本月最重要的目標。
+2. 本月最想主推的產品、服務、課程、活動或主題。原則上一個主推項目；多個項目時協助選一個，其餘只作輔助；沒有銷售目標也可選內容主題。
+3. 重要活動、檔期、節日、新品、課程、合作或事件，以及已知日期。
+4. 最近真正發生、可以成為內容的事情：工作日常、客戶問題、案例、幕後、教學、心得、故事、成果。
+5. 最近客戶或觀眾最常問的問題，已在人設提供的不要重問。
+6. 可用素材：照片、影片、案例、對話、工作畫面、客戶回饋、舊內容。
+7. 本月一定想講的觀點、故事或內容。
+8. 實際能投入的拍攝、剪輯、製作時間。先問每週能製作幾次，再依已有資訊和必要追問確認較有空的日子、能否露臉、不能拍攝或發布的日期、需要提前準備的內容；每次仍只能問一題。
+資訊不足且影響規劃時要追問，不得捏造案例、活動、客戶問題或素材。達到提問上限仍缺少的細節，明列待確認，不可當作已確認事實；用不依賴虛構素材的低成本替代安排。
+製作時間不夠時先降低製作難度、批次處理或使用現有素材，不得自行減少所選方案篇數。`,
+`【整理當月內容素材】
+訪談完成後先簡短整理可用素材。可依實際需要分類為專業／教學、故事／經驗、問題／痛點、案例／成果、日常／幕後、個人觀點、客戶 QA、產品／服務、互動內容、品牌價值、銷售／轉換，不必每類都用。
+依產業、定位、客群、本月目標與真實素材安排比例，不要強制固定比例。沒有招生、銷售或活動檔期，不要硬套暖身、開賣、收尾；只有確實有檔期，才安排暖身→加溫→推廣→收尾→最後提醒。`,
+`【最終月計畫輸出】
+第一部分｜本月內容策略
+列出本月核心目標、內容主軸、主要推廣項目、內容分類與比例，說明為什麼這樣安排。
+
+第二部分｜Reels 月計畫
+逐篇列出恰好 ${p.reels} 篇，不能只給示例或省略。
+每篇包含：發布順序、日期建議、內容形式、主題、內容切角、開頭鉤子、內容重點 2～3 點、這篇內容的目的、建議使用的素材、CTA。
+
+第三部分｜輪播貼文月計畫
+逐篇列出恰好 ${p.carousel} 篇，不能與 Reels 或限動合併計數。
+每篇包含：發布順序、日期建議、主題、內容切角、封面鉤子、內頁內容重點 2～3 點、這篇內容的目的、建議使用的素材、CTA。
+
+第四部分｜限時動態月計畫
+安排恰好 ${days} 個不同的限動發布日期，每個日期約 ${p.stories} 篇。逐日列出日期、當天主題、每篇畫面／文字／互動設計與 CTA，並列出當天內容重點 2～3 點。
+${p.stories === 3 ? '可參考：第 1 篇鉤子／互動；第 2 篇內容／現場／故事；第 3 篇回應／CTA／互動收尾。' : '可參考：第 1 篇鉤子；第 2 篇情境／現場；第 3 篇核心內容；第 4 篇觀點／回饋／延伸；第 5 篇互動／CTA。'}
+結構依產業及當日事情彈性調整。優先從當天正在發生的事情、工作現場、客戶問題、幕後紀錄與真實想法延伸，不要全部變制式宣傳；尚未發生的現場以拍攝建議呈現，不可編造成真實經歷。不要額外要求每週或每天發限動，預熱與轉分享也只能放在已選的發布日內。
+
+第五部分｜批次製作安排
+列出哪些 Reels 可同一天拍完、哪些輪播可同一天製作、哪些內容可用同一份素材裂變、建議拍攝次數、剪輯或排版次數、提前準備清單，以及如何配合使用者能投入的時間完成。
+
+第六部分｜每週執行重點
+分第 1～4 週：第 1 週為 1～7 日、第 2 週為 8～14 日、第 3 週為 15～21 日、第 4 週為 22～${lastDay} 日，涵蓋月底，不遺漏第 29～31 日。
+每週列出最重要的內容、需要準備的素材、要完成的拍攝或製作、要觀察的數據。避開使用者不能拍攝或發布的日期。
+
+第七部分｜檢查與調整
+每週提供具體判斷與動作：收藏較高的內容可延伸；觀看高但互動少時調整 CTA；詢問增加的題材繼續發展；沒做完時下週降低製作負擔、替換素材或重排。不能只說查看成效。
+減量優先指減少拍攝或剪輯工作量；如確實要減少總篇數，必須先獲使用者明確同意，不得自行改變原方案。
+
+第八部分｜三個備用主題
+提供三個低成本、素材易取得的備用主題，每個有切角、目的、內容重點 2～3 點及素材建議，只作一對一替換，不額外計入正式篇數。`,
+`【內容裂變規則】
+同一份素材可以裂變，但每篇切角與目的必須不同。Reels 偏故事、情緒、現場感、快速觀點；輪播偏教學、步驟整理、問題分析、重點收藏；限動偏幕後、即時互動、日常紀錄、投票、回應。不能只換標題重複內容。`,
+`【輸出前自我檢查】
+數清楚：Reels ${p.reels} 篇、輪播 ${p.carousel} 篇、限動 ${days} 個發布日，每日約 ${p.stories} 篇。發現不符先修正再交付，最後附實際篇數核對表。
+檢查日期都在選定月份、符合可用時間、素材有根據、每篇都有 2～3 個內容重點，且所有內容可直接照著執行。
+全程繁體中文與台灣日常用語，沿用使用者語氣，不使用制式 AI 空話。
+現在只說明已選方案並問第一題，等待使用者回答；完成訪談才輸出月計畫。`
+  ].filter(Boolean).join('\n\n');
+  return {note:'STEP 4｜複製這份訪談指令，貼到 ChatGPT、Claude 或 Gemini。AI 會一次問一題，收集素材後再安排月計畫。',text};
+}
+
 const TYPE_KEYS = Object.keys(TYPES);
 /* 指令庫還會存人設指令，所以徽章／篩選用的類型表比產生器多一個 */
 const REC_TYPES = Object.assign({}, TYPES, {persona:{name:'人設指令', icon:'◈', cls:'c'}});
@@ -1413,7 +1535,7 @@ function offerText(o){
 }
 
 /* 【背景】＝人設裡所有「AI 該知道但不用每次重打」的東西 */
-function bgBlock(){
+function bgBlock(opt){
   const p = persona, L = [];
   const put = (k, v) => { const s = tx(v); if(s) L.push('- ' + k + '：' + s); };
 
@@ -1462,7 +1584,7 @@ function bgBlock(){
     L.push('- 客戶最常問我的問題，以及我平常的答法（請優先用我的說法，不要自己編）：');
     qa.forEach((x, i) => {
       L.push('  Q' + (i+1) + '：' + tx(x.q));
-      L.push('  A' + (i+1) + '：' + (tx(x.a) || '（我還沒補答案，請依我的專業合理推論，並標註「請老師確認」）'));
+      L.push('  A' + (i+1) + '：' + (tx(x.a) || (opt && opt.monthly ? '（尚未提供答案；需要時一次追問一題，不可自行捏造）' : '（我還沒補答案，請依我的專業合理推論，並標註「請老師確認」）')));
     });
   }
 
@@ -1470,7 +1592,7 @@ function bgBlock(){
     adRuleLines().forEach(x => L.push(x));
   }
 
-  if(!L.length) return '【背景】\n（我還沒填人設，請先問我 5 個問題把背景補齊，再開始執行任務。）';
+  if(!L.length) return opt && opt.monthly ? '【背景】\n（尚未填寫人設。只在影響月計畫時詢問真正缺少的背景，一次一題，計入訪談上限；不可自行設定產業或定位。）' : '【背景】\n（我還沒填人設，請先問我 5 個問題把背景補齊，再開始執行任務。）';
   return '【背景】\n' + L.join('\n');
 }
 
@@ -2131,6 +2253,7 @@ const BUILD = {
   },
 
   plan(){
+    if(isMonthlyPlan(genState[gkey()] || {})) return buildMonthlyPlan();
     const span = or('span','週計劃（7 天）');
     const isMonth = span.indexOf('月計劃') === 0;
     const unit = isMonth ? '這個月' : '這一週';
@@ -3141,10 +3264,16 @@ function renderGen(){
 
   document.getElementById('genFields').innerHTML = t.fields.filter(f => !f.showIf || f.showIf(s)).map(f => {
     let inner = '';
-    if(f.t === 'chips'){
+    if(f.t === 'monthPlans'){
+      inner = '<div class="month-plans" role="group" aria-label="選擇本月內容方案">' + Object.entries(MONTH_PLANS).map(([key,p]) =>
+        '<button type="button" class="month-plan' + (s[f.k] === key ? ' on' : '') + '" aria-pressed="' + (s[f.k] === key) + '" onclick="setGen(\'monthPlan\',\'' + key + '\')"><b>' + esc(p.name) + '</b><span>Reels：' + p.reels + ' 篇<br>輪播貼文：' + p.carousel + ' 篇<br>限時動態：每個發布日約 ' + p.stories + ' 篇</span><small>適合：' + esc(p.fit) + '</small></button>'
+      ).join('') + '</div>';
+    } else if(f.t === 'month'){
+      inner = '<input id="planMonth" aria-label="你要規劃哪一個月份？" type="month" class="inp month-input" required min="0001-01" max="9999-12" value="' + esc(s[f.k]||'') + '" oninput="setGen(\'' + f.k + '\',this.value,1)">';
+    } else if(f.t === 'chips'){
       const opts = (typeof f.opts === 'function') ? f.opts(s) : f.opts;
       inner = '<div class="chips">' + opts.map(o =>
-        '<button class="chip' + (s[f.k] === o ? ' on' : '') + '" onclick="setGen(\'' + f.k + '\',' + esc(JSON.stringify(o)) + ')">' + esc(o) + '</button>'
+        '<button class="chip' + (s[f.k] === o || (curType === 'plan' && f.k === 'span' && o === '月計畫' && isMonthlyPlan(s)) ? ' on' : '') + '" onclick="setGen(\'' + f.k + '\',' + esc(JSON.stringify(o)) + ')">' + esc(o) + '</button>'
       ).join('') + '</div>';
     } else if(f.t === 'area'){
       inner = '<textarea class="inp" oninput="setGen(\'' + f.k + '\',this.value,1)" placeholder="' + esc(f.ph||'') + '">' + esc(s[f.k]||'') + '</textarea>';
@@ -3208,7 +3337,7 @@ function renderOut(){
       f.req && (!f.showIf || f.showIf(gs)) && !String(gs[f.k] || '').trim());
     const copyBtn = '<button class="btn gen-copy" onclick="copyOut()">複製 AI 指令</button>' +
       '<span class="gen-hint">複製後貼到你想使用的 AI，就可以繼續生成內容。</span>';
-    doneEl.innerHTML = missing.length ? '' : (personaReady(persona)
+    doneEl.innerHTML = (missing.length || monthlyPlanError()) ? '' : (personaReady(persona)
       ? '<div class="gen-done"><b>你的專屬 AI 指令已整理完成 ✦</b>' +
         '<span>這份指令已經自動帶入你的定位、人設與這次的需求。</span>' + copyBtn + '</div>'
       : '<div class="gen-done mid"><b>你的專屬 AI 指令已整理完成 ✦</b>' +
@@ -3234,12 +3363,13 @@ function doCopy(txt, msg){
     document.body.removeChild(ta);
   }
 }
-function copyOut(){ doCopy(currentOut()); }
+function copyOut(){ const error = monthlyPlanError(); if(error){ toast(error); return; } doCopy(currentOut()); }
 
 function saveOut(){
+  const error = monthlyPlanError(); if(error){ toast(error); return; }
   const s = genState[gkey()] || {};
   /* 乾貨型、一張圖裂變都是「還沒有主題」才用的，沒填主題也要存得起來 */
-  const topic = (s.topic || s.gTopic || s.picWhat || s.what || s.goal || s.ptype || s.span ||
+  const topic = ((curType === 'plan' && isMonthlyPlan(s) ? s.planMonth + ' 月計畫・' + MONTH_PLANS[s.monthPlan].name : '') || s.topic || s.gTopic || s.picWhat || s.what || s.goal || s.ptype || s.span ||
                  (isGanhuo(s) ? '乾貨型・待訪談' : '') ||
                  (isSplit(s) ? '一張圖裂變' : '')).trim();
   if(!topic){ toast('至少先填一個主題再存喔'); return; }
