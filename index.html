@@ -443,6 +443,7 @@ select.inp{appearance:none;padding-right:34px}
 .month-plan span{margin:12px 0;line-height:1.8}.month-plan small{line-height:1.7}
 .month-plan.on{border-color:var(--orange,#bc694b);background:#fff0e5;box-shadow:0 0 0 1px var(--orange,#bc694b)}
 .month-plan:focus-visible{outline:3px solid var(--orange,#bc694b);outline-offset:3px}
+.story-weekdays .chip,.story-count .chip{min-height:44px;min-width:44px}
 .month-input{min-width:0;max-width:100%;box-sizing:border-box}
 @media(max-width:1000px){.month-plans{grid-template-columns:1fr}}
 </style>
@@ -1164,7 +1165,7 @@ const TYPES = {
 
   plan: {
     name:'週／月計劃', icon:'🗓️', cls:'s',
-    desc:'週計畫沿用原本設定；月計畫選好月份、內容方案與限動天數，複製指令給 AI，一題一題整理當月素材。',
+    desc:'週計畫沿用原本設定；月計畫選好月份、內容方案、限動發布星期與每日篇數，複製指令給 AI，一題一題整理當月素材。',
     fields:[
       {k:'span', t:'chips', label:'你要排多久的計劃？', req:true,
        opts:['週計劃（7 天）','月計劃（4 週）']},
@@ -1192,6 +1193,35 @@ const MONTH_PLANS = {
   B:{name:'方案 B｜中階款',reels:8,carousel:4,stories:3,fit:'希望提高內容曝光，同時開始經營限時動態與觀眾互動的使用者。'},
   C:{name:'方案 C｜高階經營款',reels:12,carousel:6,stories:5,fit:'希望把社群當成主要曝光、獲客或品牌經營管道，需要更完整內容佈局的使用者。'}
 };
+const STORY_WEEKDAYS = ['星期一','星期二','星期三','星期四','星期五','星期六','星期日'];
+const STORY_STRUCTURES = {
+  1:'直接安排當日最重要的一個內容。',
+  2:'① 鉤子／情境；② 核心內容／CTA。',
+  3:'① 鉤子／互動；② 核心內容／故事；③ CTA／互動收尾。',
+  4:'① 鉤子；② 情境；③ 核心內容；④ CTA／互動。',
+  5:'① 鉤子；② 情境／日常；③ 核心內容；④ 延伸／觀點／回饋；⑤ CTA／互動收尾。'
+};
+function selectedStoryWeekdays(s){
+  return STORY_WEEKDAYS.filter(day => Array.isArray(s.storyWeekdays) && s.storyWeekdays.includes(day));
+}
+// 用 UTC 與實際年月計算，避免時區、夏令時間及 Date 的 0～99 年偏移。
+function monthlyStorySchedule(s){
+  if(!/^(?!0000)\d{4}-(0[1-9]|1[0-2])$/.test(s.planMonth || '')) return [];
+  const [year,month]=s.planMonth.split('-').map(Number), selected=selectedStoryWeekdays(s);
+  const date=new Date(0);date.setUTCFullYear(year,month-1,1);date.setUTCHours(0,0,0,0);
+  const result=[];
+  while(date.getUTCMonth()===month-1 && date.getUTCFullYear()===year){
+    const weekday=STORY_WEEKDAYS[(date.getUTCDay()+6)%7];
+    if(selected.includes(weekday)) result.push({date:s.planMonth+'-'+String(date.getUTCDate()).padStart(2,'0'),weekday});
+    date.setUTCDate(date.getUTCDate()+1);
+  }
+  return result;
+}
+function toggleStoryWeekday(day){
+  if(curType !== 'plan' || !STORY_WEEKDAYS.includes(day)) return;
+  const selected=selectedStoryWeekdays(genState[gkey()] || {});
+  setGen('storyWeekdays',STORY_WEEKDAYS.filter(d=>d===day ? !selected.includes(d) : selected.includes(d)));
+}
 function isMonthlyPlan(s){ return /^月計[劃畫]/.test(s.span || ''); }
 /* 舊草稿的「月計劃（4 週）」仍然辨識；週計畫欄位與預設值不動。 */
 TYPES.plan.fields[0].opts[1] = '月計畫';
@@ -1199,8 +1229,11 @@ TYPES.plan.fields.slice(1).forEach(f => { f.showIf = s => !isMonthlyPlan(s); });
 TYPES.plan.fields.splice(1,0,
   {k:'planMonth',t:'month',label:'STEP 1｜你要規劃哪一個月份？',req:true,showIf:isMonthlyPlan},
   {k:'monthPlan',t:'monthPlans',label:'STEP 2｜選擇本月內容方案',req:true,showIf:isMonthlyPlan},
-  {k:'storyDays',t:'chips',label:'STEP 3｜這個月想安排幾個限時動態發布日？',req:true,
-   hint:'這是整個月的發布日數，不是每週。限動不計入 Reels 與輪播篇數。',opts:['1 天','2 天','3 天','4 天','5 天'],showIf:isMonthlyPlan}
+  {k:'storyWeekdays',t:'storyWeekdays',label:'STEP 3｜每週想在哪幾天發布限時動態？',req:true,
+   hint:'選擇你每週固定想經營限時動態的日子，可複選。',showIf:isMonthlyPlan},
+  {k:'storyCount',t:'storyCount',label:'STEP 4｜每個發布日想發幾篇限時動態？',req:true,
+   hint:'選擇一個你實際做得到的數量，AI 會依照這個數量安排每天的限時動態內容。',
+   showIf:s=>isMonthlyPlan(s) && selectedStoryWeekdays(s).length>0}
 );
 function monthlyPlanError(){
   const s=genState[gkey()] || {};
@@ -1208,7 +1241,9 @@ function monthlyPlanError(){
   const missing=[];
   if(!/^(?!0000)\d{4}-(0[1-9]|1[0-2])$/.test(s.planMonth || '')) missing.push('規劃月份（年份與月份）');
   if(!Object.prototype.hasOwnProperty.call(MONTH_PLANS,s.monthPlan)) missing.push('內容方案 A／B／C');
-  if(!/^[1-5] 天$/.test(s.storyDays || '')) missing.push('限動發布日數（1～5 天）');
+  const weekdays=selectedStoryWeekdays(s);
+  if(!weekdays.length || weekdays.length !== s.storyWeekdays.length) missing.push('每週限動發布星期（可複選 1～7 天）');
+  if(!/^[1-5] 篇$/.test(s.storyCount || '')) missing.push('每個發布日的限動篇數（1～5 篇）');
   return missing.length ? '請先選擇：' + missing.join('、') + '，才能產生月計畫訪談指令。' : '';
 }
 function buildMonthlyPlan(){
@@ -1216,8 +1251,11 @@ function buildMonthlyPlan(){
   if(error) return {note:esc(error),text:''};
   const s=genState[gkey()], p=MONTH_PLANS[s.monthPlan];
   const [year,month]=s.planMonth.split('-').map(Number);
-  const lastDay=new Date(Date.UTC(year,month,0)).getUTCDate();
-  const days=parseInt(s.storyDays,10);
+  const end=new Date(0);end.setUTCFullYear(year,month,0);
+  const lastDay=end.getUTCDate();
+  const schedule=monthlyStorySchedule(s), days=schedule.length;
+  const stories=parseInt(s.storyCount,10), totalStories=days*stories;
+  const weekdays=selectedStoryWeekdays(s).join('、');
   // 範例在這裡只作風格參考，避免共用 exBlock 的「先分析兩句」干擾第一題。
   const examples=['【語氣與內容風格參考】',
     persona.aiRole ? '原本人設的 AI 專業角色（作為領域參考）：'+tx(persona.aiRole) : '',
@@ -1233,9 +1271,16 @@ function buildMonthlyPlan(){
 選擇方案：${p.name}
 Reels 確切篇數：${p.reels} 篇
 輪播貼文確切篇數：${p.carousel} 篇
-限時動態發布日數：${days} 天（整個月，不是每週）
-每個限動發布日的建議篇數：約 ${p.stories} 篇
-三種形式分開計數。不得自行增加、減少或混淆篇數，也不得再次要求使用者選擇 A／B／C、月份或限動天數。所有發布日期必須落在 ${s.planMonth}-01 至 ${s.planMonth}-${lastDay}，不得猜測其他月份或直接從下週一開始。`,
+每週固定發布限時動態：${weekdays}（每週重複，直到該月份結束）
+每個發布日的限時動態篇數：${stories} 篇（使用者已選定）
+方案建議量：每個發布日約 ${p.stories} 篇，僅供參考；實際必須遵守使用者選擇的 ${stories} 篇，不得用方案建議覆蓋。
+依本月實際日期計算：共 ${days} 個限動發布日，合計 ${totalStories} 篇限時動態。
+三種形式分開計數。不得自行增加、減少或混淆篇數，也不得再次要求使用者選擇 A／B／C、月份、發布星期或每日篇數。所有發布日期必須落在 ${s.planMonth}-01 至 ${s.planMonth}-${lastDay}，不得猜測其他月份或直接從下週一開始。
+
+【網站依實際月份算出的限動排程】
+${schedule.map(item=>item.date+'｜'+item.weekday+'｜'+stories+' 篇').join('\n')}
+以上是本月每一次所選星期的實際日期，包含月初、月底不完整的一週。請逐日使用，不可自行假設日期或星期，也不可只排第一週。
+若訪談得知不能發布的日期與此清單衝突，先指出確切衝突日期，一次問一題確認調整方式；未取得同意前不得自行移日、刪日或增加發布日。`,
 bgBlock({monthly:true}),examples,
 `【人設資料套用規則】
 優先沿用目前選用人設已完成的產業／職業、個人定位、目標客群、服務／產品、內容方向、品牌特色、語氣與內容風格、個人經歷及相關背景。不得自行設定產業或定位。
@@ -1271,9 +1316,10 @@ bgBlock({monthly:true}),examples,
 每篇包含：發布順序、日期建議、主題、內容切角、封面鉤子、內頁內容重點 2～3 點、這篇內容的目的、建議使用的素材、CTA。
 
 第四部分｜限時動態月計畫
-安排恰好 ${days} 個不同的限動發布日期，每個日期約 ${p.stories} 篇。逐日列出日期、當天主題、每篇畫面／文字／互動設計與 CTA，並列出當天內容重點 2～3 點。
-${p.stories === 3 ? '可參考：第 1 篇鉤子／互動；第 2 篇內容／現場／故事；第 3 篇回應／CTA／互動收尾。' : '可參考：第 1 篇鉤子；第 2 篇情境／現場；第 3 篇核心內容；第 4 篇觀點／回饋／延伸；第 5 篇互動／CTA。'}
-結構依產業及當日事情彈性調整。優先從當天正在發生的事情、工作現場、客戶問題、幕後紀錄與真實想法延伸，不要全部變制式宣傳；尚未發生的現場以拍攝建議呈現，不可編造成真實經歷。不要額外要求每週或每天發限動，預熱與轉分享也只能放在已選的發布日內。
+依上方日期清單，按週分組，完整安排每週的 ${weekdays}，本月共 ${days} 個限動發布日。每個發布日恰好 ${stories} 篇，合計 ${totalStories} 篇。不得把每週選取的星期數當成全月發布日數。
+逐日列出日期、星期、當天主題、每篇畫面／文字／互動設計與 CTA，並列出當天內容重點 2～3 點。不可用「下週同上」省略。
+每日 ${stories} 篇的內容安排參考：${STORY_STRUCTURES[stories]}
+結構依產業及當日事情彈性調整。優先從當天正在發生的事情、工作現場、客戶問題、幕後紀錄與真實想法延伸，不要全部變制式宣傳；尚未發生的現場以拍攝建議呈現，不可編造成真實經歷。每週固定重複所選星期，其他星期不另加限動；預熱與轉分享也只能放在已列出的發布日與每日篇數內。
 
 第五部分｜批次製作安排
 列出哪些 Reels 可同一天拍完、哪些輪播可同一天製作、哪些內容可用同一份素材裂變、建議拍攝次數、剪輯或排版次數、提前準備清單，以及如何配合使用者能投入的時間完成。
@@ -1291,12 +1337,12 @@ ${p.stories === 3 ? '可參考：第 1 篇鉤子／互動；第 2 篇內容／�
 `【內容裂變規則】
 同一份素材可以裂變，但每篇切角與目的必須不同。Reels 偏故事、情緒、現場感、快速觀點；輪播偏教學、步驟整理、問題分析、重點收藏；限動偏幕後、即時互動、日常紀錄、投票、回應。不能只換標題重複內容。`,
 `【輸出前自我檢查】
-數清楚：Reels ${p.reels} 篇、輪播 ${p.carousel} 篇、限動 ${days} 個發布日，每日約 ${p.stories} 篇。發現不符先修正再交付，最後附實際篇數核對表。
+數清楚：Reels ${p.reels} 篇、輪播 ${p.carousel} 篇、限動每週 ${weekdays}，本月 ${days} 個發布日，每日恰好 ${stories} 篇，合計 ${totalStories} 篇。發現不符先修正再交付，最後附實際篇數核對表。
 檢查日期都在選定月份、符合可用時間、素材有根據、每篇都有 2～3 個內容重點，且所有內容可直接照著執行。
 全程繁體中文與台灣日常用語，沿用使用者語氣，不使用制式 AI 空話。
 現在只說明已選方案並問第一題，等待使用者回答；完成訪談才輸出月計畫。`
   ].filter(Boolean).join('\n\n');
-  return {note:'STEP 4｜複製這份訪談指令，貼到 ChatGPT、Claude 或 Gemini。AI 會一次問一題，收集素材後再安排月計畫。',text};
+  return {note:'STEP 5｜複製這份訪談指令，貼到 ChatGPT、Claude 或 Gemini。AI 會一次問一題，收集素材後再安排月計畫。',text};
 }
 
 const TYPE_KEYS = Object.keys(TYPES);
@@ -3266,8 +3312,22 @@ function renderGen(){
     let inner = '';
     if(f.t === 'monthPlans'){
       inner = '<div class="month-plans" role="group" aria-label="選擇本月內容方案">' + Object.entries(MONTH_PLANS).map(([key,p]) =>
-        '<button type="button" class="month-plan' + (s[f.k] === key ? ' on' : '') + '" aria-pressed="' + (s[f.k] === key) + '" onclick="setGen(\'monthPlan\',\'' + key + '\')"><b>' + esc(p.name) + '</b><span>Reels：' + p.reels + ' 篇<br>輪播貼文：' + p.carousel + ' 篇<br>限時動態：每個發布日約 ' + p.stories + ' 篇</span><small>適合：' + esc(p.fit) + '</small></button>'
+        '<button type="button" class="month-plan' + (s[f.k] === key ? ' on' : '') + '" aria-pressed="' + (s[f.k] === key) + '" onclick="setGen(\'monthPlan\',\'' + key + '\')"><b>' + esc(p.name) + '</b><span>Reels：' + p.reels + ' 篇<br>輪播貼文：' + p.carousel + ' 篇<br>限時動態建議：每個發布日約 ' + p.stories + ' 篇</span><small>適合：' + esc(p.fit) + '</small></button>'
       ).join('') + '</div>';
+    } else if(f.t === 'storyWeekdays'){
+      const selected=selectedStoryWeekdays(s);
+      inner='<div class="chips story-weekdays" role="group" aria-label="每週限動發布星期">' + STORY_WEEKDAYS.map(day=>
+        '<button type="button" class="chip' + (selected.includes(day)?' on':'') + '" aria-pressed="' + selected.includes(day) + '" onclick="toggleStoryWeekday(' + esc(JSON.stringify(day)) + ')">' + (selected.includes(day)?'✓ ':'') + day + '</button>'
+      ).join('') + '</div><button type="button" class="btn ghost sm" style="margin-top:10px" aria-label="清空限動發布星期" onclick="setGen(\'storyWeekdays\',[])">清空重填</button>';
+    } else if(f.t === 'storyCount'){
+      const plan=MONTH_PLANS[s.monthPlan];
+      const recommendation=Object.prototype.hasOwnProperty.call(MONTH_PLANS,s.monthPlan) ? plan.stories : null;
+      inner=(recommendation ? '<div class="hint">' + esc(plan.name) + '建議每天 ' + recommendation + ' 篇，你可以自行選擇 1～5 篇。</div>' : '') +
+        '<div class="chips story-count" role="group" aria-label="每個發布日的限動篇數">' + [1,2,3,4,5].map(n=>{
+          const value=n+' 篇';
+          return '<button type="button" class="chip' + (s.storyCount===value?' on':'') + '" aria-pressed="' + (s.storyCount===value) + '" onclick="setGen(\'storyCount\',' + esc(JSON.stringify(value)) + ')">' + value + '</button>';
+        }).join('') + '</div>';
+      inner+='<div id="storyScheduleSummary" class="hint" style="margin-top:12px" aria-live="polite"></div>';
     } else if(f.t === 'month'){
       inner = '<input id="planMonth" aria-label="你要規劃哪一個月份？" type="month" class="inp month-input" required min="0001-01" max="9999-12" value="' + esc(s[f.k]||'') + '" oninput="setGen(\'' + f.k + '\',this.value,1)">';
     } else if(f.t === 'chips'){
@@ -3313,6 +3373,11 @@ function currentOut(){ return currentStep().text; }
 function setGenStep(i){ genStep = i; renderOut(); }
 
 function renderOut(){
+  const summary=document.getElementById('storyScheduleSummary');
+  if(summary){
+    const s=genState[gkey()] || {}, count=monthlyStorySchedule(s).length, perDay=parseInt(s.storyCount,10);
+    summary.textContent=monthlyPlanError() ? '' : '每週 ' + selectedStoryWeekdays(s).join('、') + '，每天 ' + perDay + ' 篇；' + s.planMonth + ' 共 ' + count + ' 個發布日、' + count*perDay + ' 篇限動。';
+  }
   const steps = currentSteps();
   if(genStep >= steps.length) genStep = 0;
   const cur = steps[genStep];
