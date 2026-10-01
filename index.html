@@ -949,6 +949,7 @@ let trash = load(K_T, []);
    而且會存進 localStorage，重整不會整份消失 */
 const K_G = 'aips_gendraft_v1';
 let genState = load(K_G, {});
+Object.keys(genState).forEach(k => { const g = genState[k]; if(g && g.mode === 'C｜用一張圖裂變成一則輪播') g.mode = 'C｜用一張圖生成一則輪播貼文'; });
 let saveWarned = false;
 
 /* 2026-09-11 移除雲端同步，回到純本機儲存。
@@ -1052,12 +1053,12 @@ const TYPES = {
   },
   carousel: {
     name:'輪播貼文', icon:'🎞️', cls:'b',
-    desc:'三種路線：全部用 AI 生圖、搭配你自己拍的照片，或是手上只有一張圖、請 AI 看著它裂變成一整則。選錯路線 AI 給的東西會完全用不上。',
+    desc:'三種路線：全部用 AI 生圖、搭配你自己拍的照片，或是手上只有一張圖、請 AI 看著它生成一整則輪播。選錯路線 AI 給的東西會完全用不上。',
     fields:[
       {k:'mode', t:'chips', label:'這篇輪播你要走哪一種？', req:true,
        hint:'A 路線＝你沒有素材，全部請 AI 生圖；B 路線＝你有自己的照片／作品照要用；' +
-            'C 路線＝你手上只有一張圖，請 AI 看著這張圖裂變成一整則輪播。',
-       opts:['A｜AI 生圖・手繪插畫風','A｜AI 生圖・質感攝影風','B｜用我自己的照片','C｜用一張圖裂變成一則輪播']},
+            'C 路線＝你手上只有一張圖，請 AI 看著這張圖生成一整則輪播貼文。',
+       opts:['A｜AI 生圖・手繪插畫風','A｜AI 生圖・質感攝影風','B｜用我自己的照片','C｜用一張圖生成一則輪播貼文']},
 
       {k:'picWhat', t:'text', label:'這張圖是什麼？（選填）', showIf: isSplit,
        hint:'留空也可以——AI 看得到圖。但圖上看不出來的東西（品牌、價格、什麼時候拍的）寫在這裡，它才不會亂猜。',
@@ -2043,7 +2044,7 @@ const BUILD = {
     const picWhat = v('picWhat');
 
     const text = assemble([
-      '我會給你一張圖，請你用這張圖裂變成一則 IG 輪播貼文，' + pages + '。',
+      '我會給你一張圖，請你用這張圖生成一則 IG 輪播貼文，' + pages + '。',
       '',
       '⚠️ 開始之前先確認：你有沒有真的看到我給你的那張圖？',
       '沒有收到圖的話，直接回我一句「請先把圖片上傳給我」就好，不要憑空開始寫。',
@@ -3474,7 +3475,7 @@ function saveOut(){
   /* 乾貨型、一張圖裂變都是「還沒有主題」才用的，沒填主題也要存得起來 */
   const topic = ((curType === 'plan' && isMonthlyPlan(s) ? s.planMonth + ' 月計畫・' + MONTH_PLANS[s.monthPlan].name : '') || s.topic || s.gTopic || s.picWhat || s.what || s.goal || s.ptype || s.span ||
                  (isGanhuo(s) ? '乾貨型・待訪談' : '') ||
-                 (isSplit(s) ? '一張圖裂變' : '')).trim();
+                 (isSplit(s) ? '一張圖生成輪播' : '')).trim();
   if(!topic){ toast('至少先填一個主題再存喔'); return; }
   const st = currentStep();
   const rec = {
